@@ -51,6 +51,12 @@
       - name: Copy join command to local file.
         become: yes
         local_action: copy content="{{ kubernetes_join_command.stdout_lines[0] }}" dest="/tmp/kubernetes_join_command" mode=0777
+
+      - name: Disable firewalld
+        service:
+          name: ufw
+          state: stopped
+          enabled: false
   
 
       rescue:

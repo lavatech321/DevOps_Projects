@@ -11,6 +11,15 @@
        dest: /tmp/kubernetes_join_command
        mode: 0777
 
+   - name: Disable firewalld
+     become: yes
+     become_user: kube
+     service:
+       name: ufw
+       state: stopped
+       enabled: false
+
+
    - name: Join the Worker nodes to the cluster.
      become: yes
      command: sh /tmp/kubernetes_join_command
