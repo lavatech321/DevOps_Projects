@@ -16,31 +16,25 @@
 
      - name: install docker
        shell: |
-               sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-               sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-               sudo apt-get update 
-               sudo apt-cache policy docker-ce 
-               sudo apt-get install -y docker-ce
+         curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+         add-apt-repository \
+         "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+         apt-get update -y
+         apt-get install -y docker-ce=18.06.1~ce~3-0~ubuntu
+         apt-mark hold docker-ce
+
 
      - name: disable swap
        shell: |
                sudo swapoff -a
                sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
-
-
-     - name: Create kubernetes repo file
-       file:
-         path: "/etc/apt/sources.list.d/kubernetes.list"
-         state: "touch"
-
-     - name: Add K8s Source
-       blockinfile:
-         path: "/etc/apt/sources.list.d/kubernetes.list"
-         block: |
-               deb https://apt.kubernetes.io/ kubernetes-xenial main
-
      - name: install kubernetes
        shell: |
-               sudo apt-get update
-               sudo apt-get install -y kubelet=1.20.1-00 kubeadm=1.20.1-00 kubectl=1.20.1-00
-               sudo apt-mark hold kubelet kubeadm kubectl
+         curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+         cat << EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
+         deb https://apt.kubernetes.io/ kubernetes-xenial main
+         EOF
+
+         apt-get update
+         apt-get install -y kubelet=1.14.5-00 kubeadm=1.14.5-00 kubectl=1.14.5-00
+         apt-mark hold kubelet kubeadm kubectl
