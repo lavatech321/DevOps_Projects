@@ -13,7 +13,6 @@
 
    - name: Disable firewalld
      become: yes
-     become_user: kube
      service:
        name: ufw
        state: stopped

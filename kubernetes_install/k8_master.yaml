@@ -19,7 +19,6 @@
 
       - name: create .kube directory
         become: yes
-        become_user: kube
         file:
           path: $HOME/.kube
           state: directory
@@ -28,20 +27,17 @@
       - name: copies admin.conf to user's kube config
         copy:
           src: /etc/kubernetes/admin.conf
-          dest: /home/kube/.kube/config
+          dest: $HOME/.kube/config
           remote_src: yes
-          owner: kube
 
       - name: install Pod network
         become: yes
-        become_user: kube
         shell: kubectl apply -f https://docs.projectcalico.org/v3.14/manifests/calico.yaml
         args:
           chdir: $HOME
         
       - name: Get the token for joining the worker nodes
         become: yes
-        become_user: kube
         shell: kubeadm token create  --print-join-command
         register: kubernetes_join_command
 
