@@ -16,7 +16,8 @@ Vagrant.configure("2") do |config|
      sudo echo -e "redhat\nredhat" | sudo  passwd root
      sudo echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config
      sudo echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
-     sudo echo -e "Host * \n     StrictHostKeyChecking no" > /root/.ssh/config
+     sudo sed -i 's/old-text/new-text/g' /etc/ssh/ssh_config
+     sudo sed -i "s/#   StrictHostKeyChecking ask/StrictHostKeyChecking no/g" /etc/ssh/ssh_config
      sudo systemctl restart sshd
      sudo git clone https://github.com/lavatech321/DevOps_Projects.git /tmp/project
      sudo ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
