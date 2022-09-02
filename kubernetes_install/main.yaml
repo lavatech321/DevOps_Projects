@@ -1,0 +1,5 @@
+---
+- include: install_k8.yaml
+- include: k8_master.yaml
+- include: k8_worker.yaml 
+...
