@@ -1,5 +1,5 @@
 ---
-- include: install_k8.yaml
-- include: k8_master.yaml
-- include: k8_worker.yaml 
+- include: kubernetes/install_k8.yaml
+- include: kubernetes/k8_master.yaml
+- include: kubernetes/k8_worker.yaml 
 ...
