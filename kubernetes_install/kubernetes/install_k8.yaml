@@ -3,35 +3,70 @@
   become: yes
   become_method: sudo
   become_user: root
-  gather_facts: yes
-  connection: ssh
+  gather_facts: no
 
   tasks:
-
      - name: install and configure dependencies
-       shell: |
-               sudo apt-get update && sudo apt-get install -y apt-transport-https curl
-               curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+       apt_key:
+         url:  https://packages.cloud.google.com/apt/doc/apt-key.gpg
+         state: present
 
-     - name: install docker
-       shell: |
-         curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-         add-apt-repository \
-         "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-         apt-get update -y
-         apt-get install -y docker-ce=18.06.1~ce~3-0~ubuntu
-         apt-mark hold docker-ce
+     - name: Docker add apt_key
+       apt_key:
+         url:  https://download.docker.com/linux/ubuntu/gpg
+         state: present
+
+     - name: Work out the distribution
+       command: lsb_release -sc
+       register: result
+
+     - name: Add docker repository
+       apt_repository:
+         repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ result.stdout }} stable
+         state: present
+
+     - name: Install docker
+       apt:
+         name: "docker-ce=18.06.1~ce~3-0~ubuntu"
+         state: present
+         update_cache: yes
+
+     - name: Hold docker
+       dpkg_selections:
+         name: docker-ce
+         selection: hold
 
 
      - name: disable swap
        shell: |
-               sudo swapoff -a
-               sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
-     - name: install kubernetes
-       shell: |
-         curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-         echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list
-         apt-get update
-         apt-get install -y kubelet=1.14.5-00 kubeadm=1.14.5-00 kubectl=1.14.5-00
-         apt-mark hold kubelet kubeadm kubectl
-       tags: install
+               swapoff -a
+               sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+
+     - name: Kubernetes add apt_key
+       apt_key:
+         url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+         state: present
+
+     - name: Add Kubernetes repository
+       apt_repository:
+         repo: "deb https://apt.kubernetes.io/ kubernetes-xenial main"
+         state: present
+
+     - name: Install kubernetes
+       apt:
+         name: "{{ item }}"
+         state: present
+         update_cache: yes
+       loop:
+         - "kubelet=1.14.5-00"
+         - "kubeadm=1.14.5-00"
+         - "kubectl=1.14.5-00"
+
+     - name: Hold Kubernetes
+       dpkg_selections:
+         name: "{{ item }}"
+         selection: hold
+       loop:
+         - "kubelet=1.14.5-00"
+         - "kubeadm=1.14.5-00"
+         - "kubectl=1.14.5-00"
