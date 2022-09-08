@@ -3,7 +3,6 @@ Vagrant.configure("2") do |config|
   config.vm.network "private_network", ip: "172.18.0.12"
   # config.vm.network "public_network"
    config.vm.provision "shell", inline: <<-SHELL
-     apt-get update
      sudo hostnamectl set-hostname worker1
      sudo echo -e "redhat\nredhat" | sudo  passwd root
      sudo echo -e "\n172.18.0.11   master\n172.18.0.12   worker1\n" >> /etc/hosts
