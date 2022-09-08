@@ -1,0 +1,8 @@
+---
+# Docker 
+- import_playbook: docker_install/main.yaml
+# Kubernetes
+- import_playbook: kubernetes_install/main.yaml
+# Jenkins
+- import_playbook: jenkins_install/main.yaml
+...

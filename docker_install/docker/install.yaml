@@ -1,0 +1,52 @@
+---
+- hosts: "masters, workers"
+  become: yes
+  become_method: sudo
+  become_user: root
+  gather_facts: no
+
+  tasks:
+     - name: install and configure dependencies
+       apt_key:
+         url:  https://packages.cloud.google.com/apt/doc/apt-key.gpg
+         state: present
+
+     - name: Docker add apt_key
+       apt_key:
+         url:  https://download.docker.com/linux/ubuntu/gpg
+         state: present
+
+     - name: Work out the distribution
+       command: lsb_release -sc
+       register: result
+
+     - name: Add docker repository
+       apt_repository:
+         repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ result.stdout }} stable
+         state: present
+
+     - name: Install docker
+       apt:
+         name: "docker-ce=18.06.1~ce~3-0~ubuntu"
+         state: present
+         update_cache: yes
+         force: True
+
+     - name: Hold docker
+       dpkg_selections:
+         name: docker-ce
+         selection: hold
+
+     - name: Save Uname command output
+       command: uname -s
+       register: result1
+
+     - name: Save Uname command output
+       command: uname -m
+       register: result2
+
+     - name: Download Docker-compose binary
+       get_url:
+         url: "https://github.com/docker/compose/releases/download/1.23.1/docker-compose-{{ result1.stdout }}-{{ result2.stdout }}"
+         dest: /usr/local/bin/docker-compose
+         mode: "0777"
