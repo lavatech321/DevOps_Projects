@@ -11,7 +11,5 @@ Vagrant.configure("2") do |config|
      sudo systemctl restart sshd
      sudo apt update
      sudo apt install git ansible -y
-     sudo git clone https://github.com/lavatech321/DevOps_Projects.git /tmp/project
-     sudo ansible-playbook -i /tmp/project/jenkins_install/inventory /tmp/project/jenkins_install/main.yaml
    SHELL
 end
