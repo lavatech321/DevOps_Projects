@@ -25,5 +25,4 @@
          name: "terraform"
          state: present
          update_cache: yes
-
 ...
