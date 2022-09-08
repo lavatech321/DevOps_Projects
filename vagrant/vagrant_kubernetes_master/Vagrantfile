@@ -2,7 +2,7 @@ Vagrant.configure("2") do |config|
   config.vm.box = "bento/ubuntu-18.04"
 
   # using a specific IP.
-  config.vm.network "private_network", ip: "172.24.0.9"
+  config.vm.network "private_network", ip: "172.18.0.11"
 
   # config.vm.network "public_network"
 
@@ -21,19 +21,15 @@ Vagrant.configure("2") do |config|
      sudo systemctl restart sshd
      sudo git clone https://github.com/lavatech321/DevOps_Projects.git /tmp/project
      sudo ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
-     sudo echo -e "\n172.24.0.9   master\n172.24.0.10   worker1\n" >> /etc/hosts
+     sudo echo -e "\n172.18.0.11   master\n172.18.0.12   worker1\n" >> /etc/hosts
      sudo apt-get install expect -y
      sudo expect /tmp/project/vagrant/passwordless
-     sudo wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
-     sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
      sudo apt update
-     sudo apt install openjdk-8-jdk -y
-     sudo apt install openjdk-11-jdk -y
-     sudo apt install jenkins git -y
+     sudo apt install git -y
 
+     sudo ansible-playbook -i /tmp/project/kubernetes_install/inventory /tmp/project/kubernetes_install/main.yaml
+     sudo ansible-playbook -i /tmp/project/jenkins_install/inventory /tmp/project/jenkins_install/main.yaml
 
-
-     #sudo ansible-playbook -i /tmp/project/kubernetes_install/inventory /tmp/project/kubernetes_install/main.yaml
     #sudo curl -L "https://github.com/docker/compose/releases/download/1.23.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
     #sudo chmod +x /usr/local/bin/docker-compose
    SHELL

@@ -36,6 +36,19 @@
          name: docker-ce
          selection: hold
 
+     - name: Save Uname command output
+       command: uname -s
+       register: result
+
+     - name: Save Uname command output
+       command: uname -m
+       register: result2
+
+     - name: Download Docker-compose binary
+       ansible.builtin.get_url:
+         url: "https://github.com/docker/compose/releases/download/1.23.1/docker-compose-{{ result1.stdout }}-{{ result2.stdout }}"
+         dest: /usr/local/bin/docker-compose
+         mode: "0777"
 
      - name: disable swap
        shell: |
