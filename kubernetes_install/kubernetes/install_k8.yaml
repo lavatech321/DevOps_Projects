@@ -30,6 +30,7 @@
          name: "docker-ce=18.06.1~ce~3-0~ubuntu"
          state: present
          update_cache: yes
+         force: True
 
      - name: Hold docker
        dpkg_selections:
@@ -38,7 +39,7 @@
 
      - name: Save Uname command output
        command: uname -s
-       register: result
+       register: result1
 
      - name: Save Uname command output
        command: uname -m
@@ -70,6 +71,7 @@
          name: "{{ item }}"
          state: present
          update_cache: yes
+         force: True
        loop:
          - "kubelet=1.14.5-00"
          - "kubeadm=1.14.5-00"
@@ -80,6 +82,6 @@
          name: "{{ item }}"
          selection: hold
        loop:
-         - "kubelet=1.14.5-00"
-         - "kubeadm=1.14.5-00"
-         - "kubectl=1.14.5-00"
+         - "kubelet"
+         - "kubeadm"
+         - "kubectl"
