@@ -1,0 +1,29 @@
+---
+- hosts: "masters, workers"
+  become: yes
+  become_method: sudo
+  become_user: root
+  gather_facts: no
+
+  tasks:
+     - name: Download the signing key for terraform repository
+       apt_key:
+         url: https://apt.releases.hashicorp.com/gpg
+         state: present
+
+     - name: Work out the distribution
+       command: lsb_release -sc
+       register: result
+
+     - name: Add terraform repository
+       apt_repository:
+         repo: "deb https://apt.releases.hashicorp.com {{ result.stdout }} main" 
+         state: present
+
+     - name: Install Terraform
+       apt:
+         name: "terraform"
+         state: present
+         update_cache: yes
+
+...
