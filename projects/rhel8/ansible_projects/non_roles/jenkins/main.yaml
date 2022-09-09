@@ -1,0 +1,4 @@
+# This playbook configure Jenkins server and client on Ubuntu servers
+---
+- import_playbook: jenkins/install.yaml
+...

@@ -1,0 +1,10 @@
+---
+- hosts: 'masters, workers'
+  tasks:
+    - name: Register and auto-subscribe to available content.
+      redhat_subscription:
+        state: present
+        username: kripa-koth
+        password: kripakoth@12345
+        auto_attach: true
+...

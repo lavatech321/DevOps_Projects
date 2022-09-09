@@ -1,0 +1,12 @@
+---
+- hosts: workers
+  tasks:
+    - name: mount nfs folder
+      Mount:
+       src: ansible_hosts
+        src: 192.168.0.114:/root/project
+        path: /mnt
+        state: mounted
+        fstype: nfs
+...
+

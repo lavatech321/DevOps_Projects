@@ -1,0 +1,33 @@
+---
+- hosts: masters
+  tasks:
+    - name: Package installation
+      yum:
+        name: nfs-utils
+        state: present
+
+    - name: Configuration setting
+      copy:
+        src: exports
+        dest: /etc/exports
+      notify: 
+        - restart_me
+
+    - name: Firewall setting
+      command: "firewall-cmd --permanent --add-service=nfs"
+      
+    - name: Firewall setting
+      command: "firewall-cmd --reload"
+
+    - name: Restart service
+      service:
+        name: nfs-server
+        state: started
+
+  handlers:   
+    - name: restart_me
+      service:
+        name: nfs-server
+        state: reloaded
+...
+
