@@ -1,0 +1,33 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = "generic/rhel8"
+
+  # using a specific IP.
+  config.vm.network "private_network", ip: "172.18.0.20"
+
+  # config.vm.network "public_network"
+
+   config.vm.provider "virtualbox" do |vb|
+     vb.memory = "2048"
+   end
+   config.vm.provision "shell", inline: <<-SHELL
+     sudo subscription-manager register --username kripa-koth --password kripakoth@12345 --auto-attach
+     sudo yum install -y ansible git expect
+     sudo hostnamectl set-hostname master 
+     sudo echo -e "redhat\nredhat" | sudo  passwd root
+
+     sudo sed -i "s/#PasswordAuthentication yes/PasswordAuthentication yes/g" /etc/ssh/sshd_config 
+     sudo sed -i "s/PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config 
+     sudo sed -i "s/#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config 
+     sudo sed -i "s/PermitRootLogin no/PermitRootLogin yes/g" /etc/ssh/sshd_config 
+     sudo sed -i 's/old-text/new-text/g' /etc/ssh/ssh_config
+     sudo sed -i "s/#   StrictHostKeyChecking ask/StrictHostKeyChecking no/g" /etc/ssh/ssh_config
+     sudo systemctl restart sshd
+     sudo git clone https://github.com/lavatech321/DevOps_Projects.git /tmp/project
+     sudo ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
+     sudo echo -e "\n172.18.0.20   master\n172.18.0.21   worker1\n" >> /etc/hosts
+     sudo expect /tmp/project/vagrant/passwordless
+
+     #sudo ansible-playbook -i /tmp/project/inventory /tmp/project/main.yaml
+
+   SHELL
+end
