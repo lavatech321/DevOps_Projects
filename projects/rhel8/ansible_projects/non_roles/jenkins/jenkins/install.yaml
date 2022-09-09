@@ -28,20 +28,20 @@
 
 
       # Disable the Jenkins setup wizard
-     - lineinfile:
-         path: /etc/sysconfig/jenkins
-         line: 'JAVA_ARGS="-Djenkins.install.runSetupWizard=false"'
+      #- lineinfile:
+      #   path: /etc/sysconfig/jenkins
+      #   line: 'JAVA_ARGS="-Djenkins.install.runSetupWizard=false"'
 
      # Create folder for jenkins initialisation script
-     - file:
-         name: "/var/lib/jenkins/init.groovy.d/"
-         state: "directory"
+     #- file:
+     #    name: "/var/lib/jenkins/init.groovy.d/"
+     #    state: "directory"
 
      # Download setup file
-     - copy:
-         src: setup.groovy
-         dest: /var/lib/jenkins/init.groovy.d/setup.groovy
-       notify: restart_jenkins
+     #- copy:
+     #    src: setup.groovy
+     #    dest: /var/lib/jenkins/init.groovy.d/setup.groovy
+     #  notify: restart_jenkins
 
      - name: Install firewall dependent package
        yum:
