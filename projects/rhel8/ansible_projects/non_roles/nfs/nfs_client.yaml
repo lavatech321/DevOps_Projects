@@ -1,10 +1,19 @@
 ---
+- hosts: masters
+  tasks:
+    - name: Capture IPV4 address
+      shell: "hostname -I | cut -d ' ' -f 2"
+      register: ipv4
+
+    - name: Save the IP address
+      set_fact:
+        server_ip: "{{ ipv4.stdout }}"
+
 - hosts: workers
   tasks:
     - name: mount nfs folder
-      Mount:
-       src: ansible_hosts
-        src: "{{ hostvars['masters']['server_ip'] }}/root/project"
+      mount:
+        src: "{{ hostvars['masters']['server_ip'] }}:/root/project"
         path: /mnt
         state: mounted
         fstype: nfs

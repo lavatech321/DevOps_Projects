@@ -1,5 +1,9 @@
 ---
 - hosts: masters
+  vars:
+    folder_ips:
+     /details: worker1
+
   tasks:
     - name: Capture IPV4 address
       shell: "hostname -I | cut -d ' ' -f 2"
@@ -14,9 +18,15 @@
         name: nfs-utils
         state: present
 
+    - name: Create nfs share folder
+      file: 
+        name: /details
+        state: directory
+        mode: 0777
+
     - name: Configuration setting
-      copy:
-        src: exports
+      template:
+        src: exports.j2
         dest: /etc/exports
       notify: 
         - restart_me
