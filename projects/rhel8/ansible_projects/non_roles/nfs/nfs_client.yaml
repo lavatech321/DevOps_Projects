@@ -1,5 +1,5 @@
 ---
-- hosts: masters
+- hosts: master
   tasks:
     - name: Capture IPV4 address
       shell: "hostname -I | cut -d ' ' -f 2"
@@ -11,11 +11,25 @@
 
 - hosts: workers
   tasks:
+    - name: Install nfs client package
+      yum:
+        name: nfs-utils
+        state: present
+
+    - name: "show all nfs-shares"
+      shell: "showmount -e {{ hostvars['master']['server_ip'] }}"
+      register: share_output
+
+    - name: "Display all nfs-shares"
+      debug:
+        msg: "{{ share_output.stdout }}"
+
     - name: mount nfs folder
       mount:
-        src: "{{ hostvars['masters']['server_ip'] }}:/root/project"
-        path: /mnt
+        src: "{{ hostvars['master']['server_ip'] }}:/details"
+        path: /mnt/nfs
         state: mounted
         fstype: nfs
+        opts: rw,sync
 ...
 

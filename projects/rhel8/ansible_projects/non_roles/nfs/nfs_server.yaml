@@ -2,9 +2,10 @@
 - hosts: masters
   vars:
     folder_ips:
-     /details: worker1
-
+      /details: worker1
+    ansible_python_interpreter: /usr/bin/python3.6
   tasks:
+
     - name: Capture IPV4 address
       shell: "hostname -I | cut -d ' ' -f 2"
       register: ipv4
@@ -31,11 +32,28 @@
       notify: 
         - restart_me
 
-    - name: Firewall setting
-      command: "firewall-cmd --permanent --add-service=nfs"
-      
-    - name: Firewall setting
-      command: "firewall-cmd --reload"
+    - name: Install firewall dependent package
+      yum:
+        name: python3-firewall
+        state: present
+
+    - name: Permit nfs traffic in firewall
+      firewalld:
+        service: nfs
+        permanent: yes
+        state: enabled
+
+
+    - name: Permit rpc-bind traffic in firewall
+      firewalld:
+        service: rpc-bind
+        permanent: yes
+        state: enabled
+    - name: Permit mountd traffic in firewall
+      firewalld:
+        service: nfs
+        permanent: yes
+        state: enabled
 
     - name: Restart service
       service:
