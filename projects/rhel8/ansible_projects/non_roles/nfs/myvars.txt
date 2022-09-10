@@ -1,2 +1,0 @@
-folder_ips:
-  /details: worker1

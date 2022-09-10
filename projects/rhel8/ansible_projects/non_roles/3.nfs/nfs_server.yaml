@@ -1,10 +1,28 @@
 ---
 - hosts: masters
   vars:
-    folder_ips:
+    folders:
+      - /details
+      - /webcode
+    folder_share:
       /details: worker1
+      /webcode: worker1
     ansible_python_interpreter: /usr/bin/python3.6
+    package_list:
+      - nfs-utils
+      - python3-firewall
+    firewall_service:
+      - nfs
+      - rpc-bind
+      - mountd
+
   tasks:
+    - name: Package installation
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - "{{ package_list }}"
 
     - name: Capture IPV4 address
       shell: "hostname -I | cut -d ' ' -f 2"
@@ -14,16 +32,13 @@
       set_fact:
         server_ip: "{{ ipv4.stdout }}"
 
-    - name: Package installation
-      yum:
-        name: nfs-utils
-        state: present
-
     - name: Create nfs share folder
       file: 
-        name: /details
+        name: "{{ item }}"
         state: directory
         mode: 0777
+      loop:
+        - "{{ folders }}"
 
     - name: Configuration setting
       template:
@@ -32,28 +47,13 @@
       notify: 
         - restart_me
 
-    - name: Install firewall dependent package
-      yum:
-        name: python3-firewall
-        state: present
-
-    - name: Permit nfs traffic in firewall
+    - name: Enable firewall services for nfs
       firewalld:
-        service: nfs
+        service: "{{ item }}"
         permanent: yes
         state: enabled
-
-
-    - name: Permit rpc-bind traffic in firewall
-      firewalld:
-        service: rpc-bind
-        permanent: yes
-        state: enabled
-    - name: Permit mountd traffic in firewall
-      firewalld:
-        service: nfs
-        permanent: yes
-        state: enabled
+      loop:
+        - "{{ firewall_service }}"
 
     - name: Restart service
       service:
