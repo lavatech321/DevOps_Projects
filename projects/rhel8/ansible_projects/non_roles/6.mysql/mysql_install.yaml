@@ -1,31 +1,26 @@
 ---
 - hosts: masters
+  gather_facts: false
+  become: true
   vars:
+    mysql_root_password: 'redhat'
     packages:
-      - httpd
-      - firewalld
+      - mysql-server
+      - mysql-devel
+      - python39
+      - python39-devel
+      - python39-pip
+      - gcc
       - python3-firewall
     ansible_python_interpreter: /usr/bin/python3.6
-    code_location:
-      - website_code/website1
-      - website_code/website2
-      - website_code/website3
-    firewall_settings:
-      - 80/tcp
-      - 8800/tcp
-      - 8900/tcp
-    ports:
-      - 80
-      - 8800
-      - 8900
-    details:
-      website1: [[ "80" , "abcfarms.example.com" , "webmaster@abcfarms.example.com" , "logs/website1_error_log" , "logs/website1_access_log" ]]
-      website2: [[ "8800" , "abcf.example.com" , "webmaster@abc.example.com" , "logs/website2_error_log" , "logs/website2_access_log" ]]
-      website3: [[ "8900" , "farms.example.com" , "webmaster@farms.example.com" , "logs/website3_error_log" , "logs/website3_access_log" ]]
+    conf_settings:
+      conf/webserver1.conf: website1
+      conf/webserver2.conf: website2
+      conf/webserver3.conf: website3
 
   tasks:
     - name: Package installation
-      yum:
+      dnf:
         name: "{{ item }}"
         state: present
       loop: 
@@ -40,8 +35,8 @@
 
     - name: Copy Website code
       copy: 
-        src: "{{ item }}"
-        dest: "/var/www/html"
+        src: "{{ item.0 }}"
+        dest: "/var/www/html/{{ item.1 }}"
       loop:
         - "{{ code_location }}"
       notify: 
@@ -61,9 +56,11 @@
         - "{{ firewall_settings }}"
 
     - name: Testing website 1
-      command: "curl http://master:{{ item }}"
+      command: "{{ item }}"
       loop:
-        - "{{ ports }}"
+        - "curl http://master"
+        - "curl http://master:6800"
+        - "curl http://master:5800"
 
   handlers:   
     - name: restart_me
