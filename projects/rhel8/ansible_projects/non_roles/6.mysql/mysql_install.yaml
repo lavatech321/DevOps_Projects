@@ -13,59 +13,67 @@
       - gcc
       - python3-firewall
     ansible_python_interpreter: /usr/bin/python3.6
-    conf_settings:
-      conf/webserver1.conf: website1
-      conf/webserver2.conf: website2
-      conf/webserver3.conf: website3
 
   tasks:
-    - name: Package installation
-      dnf:
-        name: "{{ item }}"
-        state: present
-      loop: 
-        - "{{ packages }}"
+    - block:
+        - name: Package installation
+          dnf:
+            name: "{{ item }}"
+            state: present
+          loop: 
+            - "{{ packages }}"
 
-    - name: Configuration setting
-      template:
-        src: webserver.j2
-        dest: /etc/httpd/conf.d/
-      notify: 
-        - restart_me
+        - name: Install Required pip modules
+          pip:
+            name: PyMySQL
+            state: present
+            executable: pip3
 
-    - name: Copy Website code
-      copy: 
-        src: "{{ item.0 }}"
-        dest: "/var/www/html/{{ item.1 }}"
-      loop:
-        - "{{ code_location }}"
-      notify: 
-        - restart_me
+        - name: Restart service
+          service:
+            name: mysqld
+            state: started
+            enabled: yes
 
-    - name: Restart service
-      service:
-        name: httpd
-        state: started
+        - name: Ensure root user can only login from localhost
+          mysql_user:
+            login_password: "{{ mysql_root_password }}"
+            check_implicit_admin: yes
+            name: root
+            host: "{{ item }}"
+            password: "{{ mysql_root_password }}"
+            state: present
+          with_items:
+            - localhost
+            - 127.0.0.1
 
-    - name: Enable firewall services for httpd
-      firewalld:
-        port: "{{ item }}"
-        permanent: yes
-        state: enabled
-      loop:
-        - "{{ firewall_settings }}"
+        - name: Enable firewall services for httpd
+          firewalld:
+            port: "{{ item }}"
+            permanent: yes
+            state: enabled
+          loop:
+            - "{{ firewall_settings }}"
 
-    - name: Testing website 1
-      command: "{{ item }}"
-      loop:
-        - "curl http://master"
-        - "curl http://master:6800"
-        - "curl http://master:5800"
+      rescue:
+        - name: Uninstall mysql package
+          dnf:
+            name: "{{ item }}"
+            state: absent
+          loop: 
+            - mysql-server
+            - mysql-devel
+
+        - name: Remove mysql settings
+          file:
+            name: "/var/lib/mysql"
+            state: absent
+
 
   handlers:   
     - name: restart_me
       service:
-        name: httpd
+        name: mysqld
         state: reloaded
 ...
 
