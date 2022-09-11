@@ -11,6 +11,12 @@
       - python3-firewall
     firewall_service:
       - samba
+    samba_users:
+      - rohit
+      - sudhanshu
+    samba_cred:
+      rohit: r@12345
+      sudhanshu: s@12345
 
   tasks:
     - name: installing packages
@@ -29,17 +35,21 @@
 
     - name: create a user
       user:
-        name: "{{item}}"
-        append: yes
-      with_items:
-        - rohit
-        - sudhanshu
+        name: "{{ item }}"
+        state: present
+      loop: "{{ samba_users }}"
 
     - name: Adding into samba user
-      shell: echo -ne "1234\n1234\n" | smbpasswd -a -s sudhanshu
+      shell: echo -ne "{{ item.value }}\n{{ item.value }}\n" | smbpasswd -a -s "{{ item.key }}"
+      loop: "{{ samba_cred | dict2items }}"
 
-    - name: Adding into samba user
-      shell: echo -ne "123\n123\n" | smbpasswd -a -s rohit
+    - name: Samba database
+      shell: "pdbedit -wL"
+      register: db
+
+    - name: Display samba database
+      debug:
+        msg: "{{ db.stdout }}"
 
     - name: adding content in samba config file
       blockinfile:
@@ -59,18 +69,27 @@
         state: restarted
       loop: "{{services}}"
 
-    - name: Enable firewall services for nfs
+    - name: Enable firewall services for samba
       firewalld:
         service: "{{ item }}"
         permanent: yes
         state: enabled
-      loop:
-        - "{{ firewall_service }}"
+      loop: "{{ firewall_service }}"
 
     - name: Put SELinux in permissive mode
       selinux:
         policy: targeted
         state: permissive
+
+    - name: Test samba settings
+      shell: testparm
+      register: result
+
+    - name: Display samba settings result
+      debug:
+        msg: "{{ result.stdout_lines }}"
+
+
 
   handlers:   
     - name: restart_me
