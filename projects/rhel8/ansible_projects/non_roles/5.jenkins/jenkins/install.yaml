@@ -54,6 +54,12 @@
          permanent: yes
          state: enabled
 
+     - name: Put SELinux in permissive mode
+       selinux:
+         policy: targeted
+         state: permissive
+
+
   handlers:
     - name: restart_jenkins
       service:

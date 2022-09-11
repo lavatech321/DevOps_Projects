@@ -93,6 +93,11 @@
             path: /root/.my.cnf
             state: absent
 
+        - name: Put SELinux in permissive mode
+          selinux:
+            policy: targeted
+            state: permissive
+
       rescue:
         - name: Uninstall mysql package
           dnf:

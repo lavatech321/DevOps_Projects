@@ -11,11 +11,6 @@
 
 - hosts: workers
   tasks:
-    - name: Put SELinux in permissive mode
-      selinux:
-        policy: targeted
-        state: permissive
-
     - name: Install nfs client package
       yum:
         name: nfs-utils

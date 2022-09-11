@@ -1,0 +1,80 @@
+---
+- name: installing samba server
+  hosts: localhost
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.6
+    services:
+      - smb
+    package_list:
+      - samba
+      - samba-client
+      - python3-firewall
+    firewall_service:
+      - samba
+
+  tasks:
+    - name: installing packages
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ package_list }}"
+
+    - name: create a directory
+      file:
+        path: /smbshared
+        state: directory
+        owner: root
+        group: root
+        mode: '777'
+
+    - name: create a user
+      user:
+        name: "{{item}}"
+        append: yes
+      with_items:
+        - rohit
+        - sudhanshu
+
+    - name: Adding into samba user
+      shell: echo -ne "1234\n1234\n" | smbpasswd -a -s sudhanshu
+
+    - name: Adding into samba user
+      shell: echo -ne "123\n123\n" | smbpasswd -a -s rohit
+
+    - name: adding content in samba config file
+      blockinfile:
+        path: /etc/samba/smb.conf
+        block: |
+          [tester]
+                comment = smb dir for testing team
+                path = /smbshared
+                valid users = rohit, sudhanshu
+                write list = sudhanshu
+      notify:
+        - restart_me
+
+    - name: service restart
+      service:
+        name: "{{item}}"
+        state: restarted
+      loop: "{{services}}"
+
+    - name: Enable firewall services for nfs
+      firewalld:
+        service: "{{ item }}"
+        permanent: yes
+        state: enabled
+      loop:
+        - "{{ firewall_service }}"
+
+    - name: Put SELinux in permissive mode
+      selinux:
+        policy: targeted
+        state: permissive
+
+  handlers:   
+    - name: restart_me
+      service:
+        name: smb
+        state: reloaded
+
