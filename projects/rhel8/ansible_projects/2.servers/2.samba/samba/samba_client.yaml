@@ -9,7 +9,7 @@
       set_fact:
         server_ip: "{{ ipv4.stdout }}"
 
-- hosts: worker
+- hosts: workers
   vars:
     package_list:
       - cifs-utils

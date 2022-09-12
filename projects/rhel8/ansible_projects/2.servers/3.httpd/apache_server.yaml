@@ -57,6 +57,7 @@
         port: "{{ item }}"
         permanent: yes
         state: enabled
+        immediate: yes
       loop:
         - "{{ firewall_settings }}"
 

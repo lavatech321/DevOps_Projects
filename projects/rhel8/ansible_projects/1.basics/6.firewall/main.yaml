@@ -9,8 +9,9 @@
         state: present
 
     - name: Permit traffic in default zone on port 8081/tcp
-      ansible.posix.firewalld:
+      firewalld:
         port: 8081/tcp
         permanent: yes
         state: enabled
+        immediate: yes
 ...

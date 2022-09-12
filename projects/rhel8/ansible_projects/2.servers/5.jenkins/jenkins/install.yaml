@@ -6,6 +6,10 @@
   gather_facts: no
   vars:
     ansible_python_interpreter: /usr/bin/python3.6
+    packages:
+      - java-11-openjdk-devel
+      - jenkins
+      - python3-firewall
 
   tasks:
      - name: Download jenkins repository
@@ -18,14 +22,12 @@
           state: present
           key: https://pkg.jenkins.io/redhat/jenkins.io.key
 
-     - name: install java & jenkins package 
-       yum:
+     - name: Package installation
+       dnf:
          name: "{{ item }}"
          state: present
        loop:
-         - java-11-openjdk-devel
-         - jenkins
-
+         - "{{ packages }}"
 
       # Disable the Jenkins setup wizard
       #- lineinfile:
@@ -43,27 +45,22 @@
      #    dest: /var/lib/jenkins/init.groovy.d/setup.groovy
      #  notify: restart_jenkins
 
-     - name: Install firewall dependent package
-       yum:
-         name: python3-firewall
-         state: present
-
      - name: Permit traffic in default zone on port 8080/tcp
        firewalld:
          port: 8080/tcp
          permanent: yes
          state: enabled
+         immediate: yes
 
      - name: Put SELinux in permissive mode
        selinux:
          policy: targeted
          state: permissive
 
-
   handlers:
     - name: restart_jenkins
       service:
         name: jenkins
-        state: restarted
+        state: reloaded
 
 

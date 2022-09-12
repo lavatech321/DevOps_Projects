@@ -74,6 +74,7 @@
         service: "{{ item }}"
         permanent: yes
         state: enabled
+        immediate: yes
       loop: "{{ firewall_service }}"
 
     - name: Put SELinux in permissive mode
