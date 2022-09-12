@@ -27,6 +27,9 @@ Vagrant.configure("2") do |config|
      sudo echo -e "\n172.18.0.20   master\n172.18.0.21   worker1\n" >> /etc/hosts
      sudo expect /tmp/project/vagrant/passwordless
 
+     sudo subscription-manager register --username kripa-koth --password kripakoth@12345 --auto-attach
+     sudo yum install git ansible vim rsync -y
+
      #sudo ansible-playbook -i /tmp/project/inventory /tmp/project/main.yaml
 
    SHELL

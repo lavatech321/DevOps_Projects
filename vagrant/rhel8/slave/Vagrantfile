@@ -16,6 +16,6 @@ Vagrant.configure("2") do |config|
 
      sudo systemctl restart sshd
      sudo subscription-manager register --username kripa-koth --password kripakoth@12345 --auto-attach
-     sudo yum install git ansible -y
+     sudo yum install git ansible vim rsync -y
    SHELL
 end

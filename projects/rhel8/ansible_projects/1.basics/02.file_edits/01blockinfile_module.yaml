@@ -1,0 +1,17 @@
+# This playbook contains some examples related editing a file using blockinfile module
+---
+- hosts: localhost
+  gather_facts: yes
+  tasks:
+    - name: Adding content in samba config file
+      blockinfile:
+        path: /etc/samba/smb.conf
+        backup: yes
+        marker: "<!-- {mark} ANSIBLE MANAGED BLOCK -->"
+        block: |
+          [tester]
+                comment = smb dir for testing team
+                path = /smbshared
+                valid users = rohit, sudhanshu
+                write list = sudhanshu
+...

@@ -1,0 +1,32 @@
+# This playbook contains some examples related to copying & compress file/directory
+---
+- hosts: worker1
+  gather_facts: yes
+  tasks:
+    - name: Copy file from ansible server to managed node
+      copy:
+        src: data/sshd_config
+        dest: /etc/ssh/sshd_config
+        owner: root
+        group: root
+        mode: '0600'
+        backup: yes
+
+    - name: Copy using inline content
+      copy:
+        content: '# This is sample content'
+        dest: /etc/mine.conf
+
+    - name: Copy folder from ansible server to managed node
+      copy:
+        src: data
+        dest: /tmp
+
+    - name: copy file from client to manage server
+      synchronize:
+        src: /demo.txt
+        dest: /tmp
+        mode: pull
+      delegate_to: worker2
+
+...
