@@ -11,7 +11,7 @@ Vagrant.configure("2") do |config|
    end
    config.vm.provision "shell", inline: <<-SHELL
      sudo subscription-manager register --username kripa-koth --password kripakoth@12345 --auto-attach
-     sudo yum install -y ansible git expect
+     sudo yum install -y ansible git expect vim rsync wget 
      sudo hostnamectl set-hostname master 
      sudo echo -e "redhat\nredhat" | sudo  passwd root
 
@@ -28,7 +28,6 @@ Vagrant.configure("2") do |config|
      sudo expect /tmp/project/vagrant/passwordless
 
      sudo subscription-manager register --username kripa-koth --password kripakoth@12345 --auto-attach
-     sudo yum install git ansible vim rsync -y
 
      #sudo ansible-playbook -i /tmp/project/inventory /tmp/project/main.yaml
 

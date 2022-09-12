@@ -22,11 +22,13 @@
         src: data
         dest: /tmp
 
-    - name: copy file from client to manage server
+    - name: Copy file from worker1(src) to worker2(dest)
       synchronize:
+        # /demo.txt should be present on worker1
         src: /demo.txt
         dest: /tmp
         mode: pull
+      # Required: passwordless ssh between worker2 and worker1
       delegate_to: worker2
 
 ...
