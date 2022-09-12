@@ -46,6 +46,9 @@
           with_items:
             - localhost
             - 127.0.0.1
+          args:
+            creates: /tmp/mysql_configure.txt
+
 
         - name: Add .my.cnf to user home
           template:

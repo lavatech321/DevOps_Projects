@@ -1,0 +1,24 @@
+# This playbook contains some examples related to shell and command module
+---
+- hosts: localhost
+  tasks:
+    - name: Capture IPV4 address
+      shell: "hostname -I | cut -d ' ' -f 2"
+      register: ipv4
+
+    - name: "Display output of ipv4"
+      debug:
+        msg: "{{ ipv4.stdout }}"
+
+    - name: Save the IP address as ansible fact
+      set_fact:
+        server_ip: "{{ ipv4.stdout }}"
+
+- hosts: worker1
+  tasks:
+    - name: Using the newly created ansible fact "server_ip"
+      lineinfile:
+        line: "{{ hostvars['localhost']['server_ip']}}    master.example.com"
+        path: /etc/hosts
+...
+

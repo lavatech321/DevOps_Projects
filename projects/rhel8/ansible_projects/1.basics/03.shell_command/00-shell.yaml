@@ -1,0 +1,30 @@
+# This playbook contains some examples related to shell module
+---
+- hosts: localhost
+  gather_facts: yes
+  tasks:
+    - name: Execute echo command and redirect output to some file
+      shell: echo "This is sample entry" > /tmp/output.txt
+      
+    - name: Execute echo command and redirect output to some file
+      shell: 
+        cmd: echo "This is sample2 entry" > output2.txt
+        chdir: /tmp
+
+    - name: Copy ssh key using expect
+      shell: |
+        spawn ssh-copy-id root@localhost
+        expect "password:"
+        send "redhat\n"
+        expect eof
+        exit 0
+      args:
+        executable: /usr/bin/expect
+      delegate_to: localhost
+
+    - name: Execute a command and create a file, if file is already present, dont execute command
+      shell: echo "Hello World" > /tmp/index.html
+      args:
+        creates: /tmp/index.html
+
+...

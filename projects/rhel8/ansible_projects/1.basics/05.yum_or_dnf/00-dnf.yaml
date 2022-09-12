@@ -1,0 +1,26 @@
+# This playbook contains some examples related to dnf module
+---
+- hosts: localhost
+  tasks:
+    - name: Install the latest version of Apache
+      dnf:
+        name: httpd
+        state: latest
+
+    - name: Install the latest version of Git
+      dnf:
+        name: git
+        state: present
+
+    - name: Install the 'Development tools' package group
+      dnf:
+        name: '@Development tools'
+        state: present
+
+    - name: Uninstall httpd and remove it's dependency
+      dnf:
+        name: httpd
+        state: absent
+        autoremove: yes
+
+...
