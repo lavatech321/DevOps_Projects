@@ -25,7 +25,7 @@
         ===============================================
         Hard-Disk Name: {{ disk_name }}
         ===============================================
-        Total RAM: {{ ansible_memory_mb.real.total | int * 0.8 }}
+        Total RAM: {{ ansible_memory_mb.real.total }}
         ===============================================
         Total Swap: {{ ansible_memory_mb.swap.total }}
         ===============================================

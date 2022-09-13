@@ -1,0 +1,34 @@
+---
+- hosts: localhost
+  vars_files:
+    - sample_vars.yaml
+  tasks:
+
+    ##### Iterating over list #####
+    - name: Package installation
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - "{{ packages }}"
+
+
+    ##### Iterating over dictionary #####
+    - name: Prepare /etc/exports file
+      lineinfile:
+        line: "{{ item.key }}       {{ item.value }}(ro,sync)"
+        path: /etc/exports
+      loop: "{{ folder_share | dict2items }}"
+
+
+    ##### Iterating  dictionary with sub list #####
+    - name: Add user
+      user:
+        name: "{{ item.key }}"
+        uid: "{{ item.value.0 }}"
+        shell: "{{ item.value.1 }}"
+        home: "{{ item.value.2 }}"
+      loop: "{{ lookup('ansible.builtin.dict', user_details) }}"
+      #loop: "{{ user_details | dict2items | subelements('value') }}"
+
+...
