@@ -1,0 +1,75 @@
+# This playbook contains some examples demonstrating when condition usage
+---
+- hosts: localhost
+  gather_facts: yes
+  tasks:
+    - name: Install the latest version of Apache
+      dnf:
+        name: httpd
+        state: latest
+      when: ansible_distribution == "RedHat"
+
+
+    #################################################################
+    ####  Check aws-cli is present or not, if not display message ####
+    - name: Ensure aws-cli is installed
+      command: which aws
+      register: aws_result
+      ignore_errors: yes
+
+    - name: Fail if aws not available
+      fail:
+        msg: you need aws-cli installed
+      when: aws_result is failed
+      ignore_errors: yes
+    #################################################################
+
+
+    #################################################################
+    #### Create ssh key for user raman if not present #####
+    - name: Check ssh key is present or not
+      stat:
+        path: /home/raman/.ssh/id_rsa
+      register: key_status
+
+    - name: Create key for user raman if not present
+      user:
+        name: raman
+        generate_ssh_key: yes
+      when: not key_status.stat.exists
+    #################################################################
+
+
+    #################################################################
+    #### Create file if not present #####
+    - name: Check if the file exists
+      stat:
+        path: /etc/httpd/conf.d/sample.conf
+      register: file_status
+
+    - name: Create file
+      copy:
+        content: |
+          <VirtualHost *:80>
+          ServerName   www.example.com
+          </VirtualHost>
+        dest: /etc/httpd/conf.d/sample.conf
+      when: not file_status.stat.exists
+    #################################################################
+
+
+    #################################################################
+    #### Multiple when condition: Check ssh key is created or not #####
+
+    # Command: ansible-playbook -e "admin_password=redhat" 02-when.yaml 
+    - name:
+      copy:
+        content: |
+          password = "{{ admin_password }}"
+
+        dest: /tmp/details.txt
+      when:
+        - admin_password is defined
+        - admin_password != ''
+    #################################################################
+...

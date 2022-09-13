@@ -1,4 +1,4 @@
-# This playbook contains some examples related to shell and command module
+# This playbook contains some examples related to shell module
 ---
 - hosts: localhost
   tasks:
@@ -10,15 +10,5 @@
       debug:
         msg: "{{ ipv4.stdout }}"
 
-    - name: Save the IP address as ansible fact
-      set_fact:
-        server_ip: "{{ ipv4.stdout }}"
-
-- hosts: worker1
-  tasks:
-    - name: Using the newly created ansible fact "server_ip"
-      lineinfile:
-        line: "{{ hostvars['localhost']['server_ip']}}    master.example.com"
-        path: /etc/hosts
 ...
 

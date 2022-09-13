@@ -1,0 +1,30 @@
+---
+- hosts: localhost
+  vars:
+    user: raman
+    password: $1$my_rando$HlMH9zGIVgc9kf3GUK3E81
+  vars_files:
+    - sample_vars.yaml
+  tasks:
+
+    - name: Create user using variables
+      user:
+        name: "{{ user }}"
+        password: "{{ password }}"
+        state: present
+
+    - name: Install package
+      yum:
+        name: "{{ packages }}"
+        state: present
+
+    ##################################################################
+    # Pass variable while executing ansible playbook
+    # Command: ansible-playbook 00-variable.yaml -e uuid=4500
+    - name:  
+      user:
+        name: super_admin
+        uid: "{{ uuid }}"
+        state: present
+    ##################################################################
+...

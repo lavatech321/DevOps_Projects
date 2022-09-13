@@ -1,0 +1,22 @@
+
+port: 8080/tcp
+
+packages:
+  - httpd
+  - firewalld
+  - python3-firewall
+
+file_names:
+  - { src: x, dest: y }
+  - { src: z, dest: k }
+
+user_details:
+  ravi: [[ "8700" ,"/bin/bash" , "/mnt/ravi" , "admins" , "developer" ]]
+  shami: [[ "8800","/bin/bash" , "/mnt/shami", "admins" , "tester" ]]
+  kavi: [[ "8900" ,"/bin/bash" , "/mnt/kavi" , "admins" , "sysadmin" ]]
+
+
+smb_creds:
+  raman: r@12345
+  shami: s@12345
+
