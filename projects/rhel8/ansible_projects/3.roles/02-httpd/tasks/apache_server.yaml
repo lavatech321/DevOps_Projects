@@ -1,0 +1,59 @@
+---
+- block:
+    - name: Package installation
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop: 
+        - "{{ packages }}"
+
+    - name: Configuration setting
+      template:
+        src: webserver.j2
+        dest: /etc/httpd/conf.d/
+      notify: 
+        - restart_me
+
+    - name: Copy Website code
+      copy: 
+        src: "{{ item }}"
+        dest: "/var/www/html"
+      loop:
+        - "{{ code_location }}"
+      notify: 
+        - restart_me
+
+    - name: Restart service
+      service:
+        name: httpd
+        state: started
+
+    - name: Enable firewall services for httpd
+      firewalld:
+        port: "{{ item }}"
+        permanent: yes
+        state: enabled
+        immediate: yes
+      loop:
+        - "{{ firewall_settings }}"
+
+    - name: Testing website 1
+      command: "curl http://master:{{ item }}"
+      loop:
+        - "{{ ports }}"
+
+    - name: Put SELinux in permissive mode
+      selinux:
+        policy: targeted
+        state: permissive
+
+  rescue:   
+    - name: Package Uninstallation
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop: 
+        - "{{ packages }}"
+...
+
+

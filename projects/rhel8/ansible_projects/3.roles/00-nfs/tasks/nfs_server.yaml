@@ -1,0 +1,81 @@
+---
+- block:
+    - name: Package installation
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - "{{ package_list }}"
+
+    - name: Capture IPV4 address
+      shell: "hostname -I | cut -d ' ' -f 2"
+      register: ipv4
+
+    - name: Save the IP address
+      set_fact:
+        server_ip: "{{ ipv4.stdout }}"
+
+    - name: Create nfs share folder
+      file: 
+        name: "{{ item }}"
+        state: directory
+        mode: 0777
+      loop:
+        - "{{ folders }}"
+
+    - name: Configuration setting
+      template:
+        src: exports.j2
+        dest: /etc/exports
+      notify: 
+        - restart_me
+
+    - name: Enable firewall services for nfs
+      firewalld:
+        service: "{{ item }}"
+        permanent: yes
+        state: enabled
+        immediate: yes
+      loop:
+        - "{{ firewall_service }}"
+
+    - name: Restart service
+      service:
+        name: nfs-server
+        state: started
+
+    - name: Put SELinux in permissive mode
+      selinux:
+        policy: targeted
+        state: permissive
+
+  rescue:
+    - name: Package uninstallation
+      yum:
+        name: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ package_list }}"
+
+
+    - name: Remove nfs share folder
+      file: 
+        name: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ folders }}"
+
+    - name: Remove configuration setting
+      file:
+        path: /etc/exports
+        state: absent
+
+    - name: Remove firewall services for nfs
+      firewalld:
+        service: "{{ item }}"
+        permanent: no
+        state: disabled
+      loop:
+        - "{{ firewall_service }}"
+...
+

@@ -1,0 +1,7 @@
+# https://www.tecmint.com/install-wordpress-rhel-apache/
+# This playbook installs MYSQL-Server on RHEL/CENTOS servers
+---
+- import_playbook: mysql_playbook/mysql_server.yaml
+- import_playbook: wordpress_playbook/install.yaml
+...
+

@@ -1,0 +1,66 @@
+---
+- hosts: localhost
+  become: yes
+  become_method: sudo
+  become_user: root
+  gather_facts: no
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.6
+    packages:
+      - java-11-openjdk-devel
+      - jenkins
+      - python3-firewall
+
+  tasks:
+     - name: Download jenkins repository
+       get_url:
+         url: "http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo"
+         dest: /etc/yum.repos.d/jenkins.repo
+
+     - name: Import a key from a url
+       rpm_key:
+          state: present
+          key: https://pkg.jenkins.io/redhat/jenkins.io.key
+
+     - name: Package installation
+       dnf:
+         name: "{{ item }}"
+         state: present
+       loop:
+         - "{{ packages }}"
+
+      # Disable the Jenkins setup wizard
+      #- lineinfile:
+      #   path: /etc/sysconfig/jenkins
+      #   line: 'JAVA_ARGS="-Djenkins.install.runSetupWizard=false"'
+
+     # Create folder for jenkins initialisation script
+     #- file:
+     #    name: "/var/lib/jenkins/init.groovy.d/"
+     #    state: "directory"
+
+     # Download setup file
+     #- copy:
+     #    src: setup.groovy
+     #    dest: /var/lib/jenkins/init.groovy.d/setup.groovy
+     #  notify: restart_jenkins
+
+     - name: Permit traffic in default zone on port 8080/tcp
+       firewalld:
+         port: 8080/tcp
+         permanent: yes
+         state: enabled
+         immediate: yes
+
+     - name: Put SELinux in permissive mode
+       selinux:
+         policy: targeted
+         state: permissive
+
+  handlers:
+    - name: restart_jenkins
+      service:
+        name: jenkins
+        state: reloaded
+
+

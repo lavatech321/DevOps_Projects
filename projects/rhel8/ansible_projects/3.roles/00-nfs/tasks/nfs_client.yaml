@@ -1,0 +1,51 @@
+---
+- block: 
+    - name: Put SELinux in permissive mode
+      selinux:
+        policy: targeted
+        state: permissive
+
+    - name: Install nfs client package
+      yum:
+        name: nfs-utils
+        state: present
+
+    - name: "show all nfs-shares"
+      shell: "showmount -e {{ hostvars['master']['server_ip'] }}"
+      register: share_output
+
+    - name: "Display all nfs-shares"
+      debug:
+        msg: "{{ share_output.stdout }}"
+
+    - name: Create NFS mount folder
+      file:
+        path: /mnt/nfs
+        state: directory
+
+    - name: mount nfs folder
+      mount:
+        src: "{{ hostvars['master']['server_ip'] }}:/details"
+        path: /mnt/nfs
+        state: mounted
+        fstype: nfs
+        opts: rw,sync
+
+  rescue:
+    - name: Uninstall nfs client package
+      yum:
+        name: nfs-utils
+        state: absent
+
+    - name: Unmount samba share
+      mount:
+        path: /mount_nfs
+        state: unmounted
+
+    - name: Remove NFS mount folder
+      file:
+        path: /mnt/nfs
+        state: absent
+
+...
+

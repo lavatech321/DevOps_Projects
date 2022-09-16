@@ -20,7 +20,6 @@
         exit 0
       args:
         executable: /usr/bin/expect
-      delegate_to: localhost
 
     - name: Execute a command and create a file, if file is already present, dont execute command
       shell: echo "Hello World" > /tmp/index.html

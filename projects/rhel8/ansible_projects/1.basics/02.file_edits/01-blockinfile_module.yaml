@@ -7,7 +7,7 @@
       blockinfile:
         path: /etc/samba/smb.conf
         backup: yes
-        marker: "<!-- {mark} ANSIBLE MANAGED BLOCK -->"
+        marker: "#{mark} ANSIBLE MANAGED BLOCK"
         block: |
           [tester]
                 comment = smb dir for testing team

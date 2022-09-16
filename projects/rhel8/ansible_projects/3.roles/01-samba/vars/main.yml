@@ -1,0 +1,26 @@
+---
+# vars file for 01-samba
+ansible_python_interpreter: /usr/bin/python3.6
+
+services:
+  - smb
+
+package_list:
+  - samba
+  - samba-client
+  - python3-firewall
+
+firewall_service:
+  - samba
+
+samba_users:
+  - rohit
+  - sudhanshu
+
+samba_cred:
+  rohit: r@12345
+  sudhanshu: s@12345
+
+samba_client_package_list:
+  - cifs-utils
+

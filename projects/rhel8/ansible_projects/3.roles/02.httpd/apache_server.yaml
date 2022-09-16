@@ -1,0 +1,82 @@
+---
+- hosts: masters
+  vars:
+    packages:
+      - httpd
+      - firewalld
+      - python3-firewall
+    ansible_python_interpreter: /usr/bin/python3.6
+    code_location:
+      - website_code/website1
+      - website_code/website2
+      - website_code/website3
+    firewall_settings:
+      - 80/tcp
+      - 8800/tcp
+      - 8900/tcp
+    ports:
+      - 80
+      - 8800
+      - 8900
+    details:
+      website1: [[ "80" , "abcfarms.example.com" , "webmaster@abcfarms.example.com" , "logs/website1_error_log" , "logs/website1_access_log" ]]
+      website2: [[ "8800" , "abcf.example.com" , "webmaster@abc.example.com" , "logs/website2_error_log" , "logs/website2_access_log" ]]
+      website3: [[ "8900" , "farms.example.com" , "webmaster@farms.example.com" , "logs/website3_error_log" , "logs/website3_access_log" ]]
+
+  tasks:
+    - name: Package installation
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop: 
+        - "{{ packages }}"
+
+    - name: Configuration setting
+      template:
+        src: webserver.j2
+        dest: /etc/httpd/conf.d/
+      notify: 
+        - restart_me
+
+    - name: Copy Website code
+      copy: 
+        src: "{{ item }}"
+        dest: "/var/www/html"
+      loop:
+        - "{{ code_location }}"
+      notify: 
+        - restart_me
+
+    - name: Restart service
+      service:
+        name: httpd
+        state: started
+
+    - name: Enable firewall services for httpd
+      firewalld:
+        port: "{{ item }}"
+        permanent: yes
+        state: enabled
+        immediate: yes
+      loop:
+        - "{{ firewall_settings }}"
+
+    - name: Testing website 1
+      command: "curl http://master:{{ item }}"
+      loop:
+        - "{{ ports }}"
+
+    - name: Put SELinux in permissive mode
+      selinux:
+        policy: targeted
+        state: permissive
+
+
+  handlers:   
+    - name: restart_me
+      service:
+        name: httpd
+        state: reloaded
+...
+
+

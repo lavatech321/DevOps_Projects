@@ -24,7 +24,7 @@
     - name:  
       user:
         name: super_admin
-        uid: "{{ uuid }}"
+        uid: "{{ uuid | default(6700) }}"
         state: present
     ##################################################################
 ...

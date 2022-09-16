@@ -1,0 +1,25 @@
+
+########## Sample example on creating ansible vault ###########
+# ansible-playbook -e @vault2.yml --ask-vault-pass 00-main.yaml 
+---
+- hosts: localhost
+  vars_files: vault2.yml
+  tasks:
+   - name: create group
+     group:
+       name: devops2
+       state: present
+
+   - name: Create user Kate
+     user:
+       name: "{{ item.0  }}"
+       home: "{{ item.1 }}"
+       password: "{{ item.2 }}"
+       shell: /bin/bash
+       groups: devops2
+       state: present
+     with_together:
+       - "{{ username }}"
+       - "{{ user_home }}"
+       - "{{ pass }}"
+...

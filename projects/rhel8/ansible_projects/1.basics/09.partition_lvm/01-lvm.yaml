@@ -1,0 +1,43 @@
+# Sample example on creating a new partition
+---
+- hosts: localhost
+  tasks:
+    ##### Creating Partition #####
+    - name: Create a new ext4 primary partition
+      parted:
+        device: /dev/sdc
+        number: "1"
+        state: present
+        part_type: primary
+        part_end: 2GB
+        unit: GB
+        label: gpt
+
+    - name: Create Volume Group
+      lvg:
+        vg: vname
+        pvs: "/dev/sdc1"
+
+    - name: Create Logical Goup
+      lvol:
+        vg: "vname"
+        lv: "newlname"
+        size: 500m
+
+    - name: apply filesystem
+      filesystem:
+        fstype: ext2
+        dev: "/dev/vname/newlname"
+
+    - name: Create mount directory
+      file:
+        path: /mnt/project2
+        state: directory
+
+    - name: Mount /dev/sdb1 partition
+      mount:
+        path: /mnt/project2
+        src: "/dev/vname/newlname"
+        fstype: ext2
+        state: mounted
+...

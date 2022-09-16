@@ -1,0 +1,7 @@
+---
+# handlers file for 02-httpd
+- name: restart_me
+  service:
+    name: httpd
+    state: reloaded
+

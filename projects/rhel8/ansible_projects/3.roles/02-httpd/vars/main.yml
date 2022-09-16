@@ -1,0 +1,29 @@
+---
+# vars file for 02-httpd
+packages:
+  - httpd
+  - firewalld
+  - python3-firewall
+
+ansible_python_interpreter: /usr/bin/python3.6
+
+code_location:
+  - website_code/website1
+  - website_code/website2
+  - website_code/website3
+
+firewall_settings:
+  - 80/tcp
+  - 8800/tcp
+  - 8900/tcp
+
+ports:
+  - 80
+  - 8800
+  - 8900
+
+details:
+  website1: [[ "80" , "abcfarms.example.com" , "webmaster@abcfarms.example.com" , "logs/website1_error_log" , "logs/website1_access_log" ]]
+  website2: [[ "8800" , "abcf.example.com" , "webmaster@abc.example.com" , "logs/website2_error_log" , "logs/website2_access_log" ]]
+  website3: [[ "8900" , "farms.example.com" , "webmaster@farms.example.com" , "logs/website3_error_log" , "logs/website3_access_log" ]]
+

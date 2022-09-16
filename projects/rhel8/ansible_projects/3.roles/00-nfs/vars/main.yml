@@ -1,0 +1,21 @@
+---
+# vars file for 00-nfs
+folders:
+  - /details
+  - /webcode
+
+folder_share:
+  /details: worker1
+  /webcode: worker1
+
+ansible_python_interpreter: /usr/bin/python3.6
+
+package_list:
+  - nfs-utils
+  - python3-firewall
+
+firewall_service:
+  - nfs
+  - rpc-bind
+  - mountd
+

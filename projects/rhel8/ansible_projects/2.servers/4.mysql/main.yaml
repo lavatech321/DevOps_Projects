@@ -1,4 +1,0 @@
-# This playbook installs MYSQL-Server on RHEL/CENTOS servers
----
-- import_playbook: mysql/mysql_server.yaml
-...
