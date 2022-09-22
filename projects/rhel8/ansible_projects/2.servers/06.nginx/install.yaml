@@ -1,0 +1,80 @@
+---
+- hosts: localhost
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.6
+    code_location:
+      - website_code/website1
+      - website_code/website2
+      - website_code/website3
+    packages:
+      - nginx
+    details:
+      website1:  [ "8700" , "www.abcfarms.com" ]
+      website2:  [ "8800" , "www.xyzclass.com" ]
+      website3:  [ "8900" , "www.mno.com" ]
+   
+  tasks:
+    - block:
+        - name: Install packages
+          dnf:
+            name: "{{ item }}"
+            state: present
+          loop: "{{ packages }}"
+          tags:
+            - install
+
+        - name: Capture IPV4 address
+          shell: "hostname -I | cut -d ' ' -f 2"
+          register: ipv4
+          tags:
+            - info 
+
+        - name: Save the IP address
+          set_fact:
+            server_ip: "{{ ipv4.stdout }}"
+          tags:
+            - info 
+
+        - name: Configuration setting
+          template:
+            src: webserver.j2
+            dest: /etc/nginx/conf.d/webserver.conf
+          notify:
+            - restart_me
+
+        - name: Copy Website code
+          copy:
+            src: "{{ item }}"
+            dest: "/usr/share/nginx/html/"
+          loop:  "{{ code_location }}"
+
+        - name: Restart nginx daemon
+          service:
+            name: nginx
+            state: restarted
+            enabled: yes
+
+        - name: Stop firewall daemon
+          service:
+            name: firewalld
+            enabled: no
+            state: stopped
+
+        - name: "Usage details /tmp/nginx_site_details.txt"
+          blockinfile:
+            path: /tmp/nginx_site_details.txt
+            create: yes
+            marker: "######## This file contains details for nginx server usage ########"
+            block: |
+                URL 1: http://{{ server_ip }}:8700/
+                URL 2: http://{{ server_ip }}:8800/
+                URL 3: http://{{ server_ip }}:8900/
+          tags:
+            - info 
+
+  handlers:
+    - name: restart_me
+      service:
+        name: nginx
+        state: reloaded
+...
