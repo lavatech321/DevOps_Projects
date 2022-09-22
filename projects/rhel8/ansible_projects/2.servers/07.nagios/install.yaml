@@ -1,0 +1,134 @@
+---
+- hosts: localhost
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.6
+    ports: 
+      - http
+      - https
+      - mysql
+    packages:
+      - gcc 
+      - glibc 
+      - glibc-common 
+      - perl 
+      - httpd 
+      - php
+      - gd 
+      - gd-devel
+      - make 
+      - gettext 
+      - automake 
+      - autoconf 
+      - openssl-devel 
+      - net-snmp 
+      - net-snmp-utils
+   
+  tasks:
+    - block:
+        - name: Install packages
+          dnf:
+            name: "{{ item }}"
+            state: present
+          loop: "{{ packages }}"
+          tags:
+            - install
+
+        - name: Capture IPV4 address
+          shell: "hostname -I | cut -d ' ' -f 2"
+          register: ipv4
+          tags:
+            - info 
+
+        - name: Save the IP address
+          set_fact:
+            server_ip: "{{ ipv4.stdout }}"
+          tags:
+            - info 
+
+        - name: Restart apache daemon
+          service:
+            name: httpd
+            state: restarted
+
+        - name: Create folder for nagios
+          file:
+            name: "{{ item }}"
+            state: directory
+          loop:
+            - /tmp/nagios
+            - /tmp/nagios-plugin
+
+        - name: Download nagios binary
+          unarchive:
+            src: https://github.com/NagiosEnterprises/nagioscore/archive/nagios-4.4.3.tar.gz
+            dest: /tmp/nagios
+            remote_src: yes
+            extra_opts: [--strip-components=1]
+
+        - name: Configure nagios
+          command:
+            cmd: "{{ item }}"
+          args:
+            chdir: /tmp/nagios
+          loop:
+            - "./configure"
+            - "make all"
+            - "make install-groups-users"
+
+        - name: Modify nagios user
+          user:
+            name: apache
+            groups: nagios
+            append: yes
+
+        - name: Configure nagios
+          command:
+            cmd: "{{ item }}"
+          args:
+            chdir: /tmp/nagios
+          loop:
+            - "make install"
+            - "make install-daemoninit"
+            - "make install-commandmode"
+            - "make install-config"
+            - "make install-webconf"
+            - "echo 'redhat' | htpasswd -i -c /usr/local/nagios/etc/htpasswd.users nagiosadmin"
+
+        - name: Download nagios plugin
+          unarchive:
+            src: https://github.com/nagios-plugins/nagios-plugins/archive/release-2.2.1.tar.gz
+            dest: /tmp/nagios-plugin
+            remote_src: yes
+            extra_opts: [--strip-components=1]
+
+        - name: Configure nagios plugin
+          command:
+            cmd: "{{ item }}"
+          args:
+            chdir: /tmp/nagios-plugin
+          loop:
+            - "./tools/setup"
+            - "./configure"
+            - "make"
+            - "make install"
+
+        - name: Restart apache and nagios daemon
+          service:
+            name: "{{ item }}"
+            state: restarted
+          loop:
+            - httpd
+            - nagios
+
+        - name: "Usage details /tmp/nagios_details.txt"
+          blockinfile:
+            path: /tmp/nagios_details.txt
+            create: yes
+            marker: "######## This file contains details on nagios server usage ########"
+            block: |
+                "URL: http://{{ server_ip }}/nagios
+                USERNAME: nagiosadmin
+                PASSWORD: nagios"
+          tags:
+            - info 
+...
