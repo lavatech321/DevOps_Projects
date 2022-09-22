@@ -1,11 +1,73 @@
 ---
 - hosts: localhost
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.6
+    mysql_root_password: redhat
+    ports: 
+      - http
+      - https
+      - mysql
+    packages:
+      - php-mysqlnd 
+      - php-fpm 
+      - httpd
+      - php-json
+   
   tasks:
+    - name: Install apache
+      dnf:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ packages }}"
+
     - name: Download wordpress binary
       unarchive:
         src: https://wordpress.org/latest.tar.gz
         dest: /tmp
         remote_src: yes
 
-    
+    - name: Generate an OpenSSH keypair
+      openssh_keypair:
+        path: /root/.ssh/id_rsa
+        owner: root
+        group: root
+
+    - name: Get SSH public key
+      set_fact:
+        ssh_key_data: "{{lookup('file', '~/.ssh/id_rsa.pub')}}"
+
+    - name: Copy ssh key content to user's home directory
+      lineinfile:
+        line: "{{ 'ssh_key_data' }}"
+        path: /root/.ssh/authorized_keys
+
+    - name: Copy file from worker1(src) to worker2(dest)
+      synchronize:
+        src: /tmp/wordpress
+        dest: /var/www/html
+        mode: pull
+      delegate_to: localhost
+
+    - name: Set wordpress owner and group
+      file:
+        name: /var/www/html/wordpress
+        owner: apache
+        group: apache
+        recurse: yes
+        state: directory   
+
+    - name: Restart apache daemon
+      service:
+        name: httpd
+        state: restarted
+
+        #    - name: Permit traffic in default zone for service http
+        #firewalld:
+        #service: "{{ item }}"
+        #permanent: yes
+        #state: enabled
+        #immediate: yes
+        #loop: "{{ ports }}"
+
 ...
+
