@@ -30,6 +30,10 @@
             state: started
           register: service_start
 
+        - name: "Stop firewalld"
+          service:
+            name: firewalld
+            state: stopped
 
         - name: Ensure root user can only login from localhost
           mysql_user:
