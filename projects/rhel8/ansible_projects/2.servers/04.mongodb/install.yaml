@@ -1,0 +1,105 @@
+---
+- hosts: localhost
+  gather_facts: false
+  become: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.6
+
+
+  tasks:
+    - block:
+        - name: Add mongodb user
+          user:
+            name: mongod
+            state: present
+        - name: "Create mongodb folder"
+          file:
+            name: "{{ item }}"
+            state: directory
+          loop:
+            - "/opt/mongodb"
+            - "/var/lib/mongo"
+            - "/data"
+            - "/data/db"
+
+        - name: "Set mongodb ownership"
+          file:
+            name: "{{ item }}"
+            state: directory
+            owner: mongod
+            recurse: yes
+          loop:
+            - "/opt/mongodb"
+            - "/var/lib/mongo"
+
+        - name: Set group ownership of mongodb
+          file:
+            name: /opt/mongodb
+            group: mongod
+            recurse: yes
+
+        - name: "Download mongodb"
+          unarchive:
+            src: https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-4.0.5.tgz
+            dest: /opt/mongodb
+            remote_src: yes
+            extra_opts: [--strip-components=1]
+       
+        - name: Create mongodb configuration file
+          blockinfile:
+            path: /etc/mongod.conf
+            create: yes
+            block: |
+              storage:
+                dbPath: "/var/lib/mongo"
+                journal:
+                  enabled: true
+              net:
+                port: 27017
+                bindIp: "127.0.0.1"
+
+
+        - name: Create systemd daemon for mongodb
+          blockinfile:
+            path: /etc/systemd/system/mongod.service
+            create: yes
+            block: |
+              [Unit]
+              Description=MongoDB
+              After=syslog.target network.target
+
+              [Service]
+              Type=simple
+              User=mongod
+              Group=mongod
+              ExecStart=/opt/mongodb/bin/mongod --config /etc/mongod.conf
+
+              [Install]
+              WantedBy=multi-user.target
+
+        - name: Put SELinux in permissive mode
+          selinux:
+            policy: targeted
+            state: permissive
+
+        - name: Reload daemon
+          shell: systemctl daemon-reload
+
+        - name: Restart mongodb
+          service:
+            name: mongod
+            state: restarted
+            
+        - name: Add mongodb path variable
+          lineinfile:
+            path: /root/.bash_profile
+            line: PATH=$PATH:/opt/mongodb/bin
+
+        - name: Enable "mongo" command
+          shell: source /root/.bash_profile
+          args:
+            executable: /bin/bash
+
+...
+
+
