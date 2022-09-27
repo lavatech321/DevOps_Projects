@@ -1,0 +1,27 @@
+ansible_python_interpreter: /usr/bin/python3.6
+
+services:
+   - smb
+   - firewalld
+
+package_list:
+   - samba
+   - samba-client
+   - python3-firewall
+   - firewalld
+
+firewall_service:
+   - samba
+
+samba_users:
+   - rohit
+   - sudhanshu
+
+samba_cred:
+   rohit: r@12345
+   sudhanshu: s@12345
+
+client_package_list:
+   - cifs-utils
+
+

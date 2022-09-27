@@ -1,0 +1,11 @@
+mysql_root_password: 'redhat'
+packages:
+    - mysql-server
+    - mysql-devel
+    - python39
+    - python39-devel
+    - python39-pip
+    - gcc
+    - python3-firewall
+ansible_python_interpreter: /usr/bin/python3.6
+

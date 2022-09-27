@@ -1,6 +1,6 @@
 
 {% for key, value in details.items() %}
-Listen {{ var[0] }}
+Listen {{ value[0] }}
 <Directory /var/www/html/{{ key }}>
 	Require all granted
 	AllowOverride None

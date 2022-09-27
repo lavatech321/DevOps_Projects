@@ -1,5 +1,0 @@
-# This playbook installs NFS-Server on RHEL/CENTOS servers
----
-- import_playbook: playbook/nfs_server.yaml
-- import_playbook: playbook/nfs_client.yaml
-...

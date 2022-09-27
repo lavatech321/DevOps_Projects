@@ -1,0 +1,41 @@
+---
+########### NFS installation ##############
+# Execute using tags: ansible-playbook -i inventory --tags install_nfs site.yaml
+# OR
+# Execute using extra variable: ansible-playbook -i inventory site.yaml -e install_nfs=yes
+- hosts: localhost
+  any_errors_fatal: true
+
+- name: Configure NFS server
+  import_playbook: 00.nfs/nfs_server.yaml 
+  when: install is defined and install == "yes" or install_nfs is defined and install_nfs == "yes"
+
+- name: Configure NFS client
+  import_playbook: 00.nfs/nfs_client.yaml 
+  when: install is defined and install == "yes" or install_nfs is defined and install_nfs == "yes"
+
+########### Samba installation ##############
+# Execute using tags: ansible-playbook -i inventory --tags install_samba site.yaml
+# OR
+# Execute using extra variable: ansible-playbook -i inventory site.yaml -e install_samba=yes
+
+- name: Configure Samba server
+  import_playbook: 01.samba/samba_server.yaml
+  when: install is defined and install == "yes" or install_samba is defined or install_samba == "yes"
+
+- name: Configure Samba client
+  import_playbook: 01.samba/samba_client.yaml
+  when: install is defined and install == "yes" or install_samba is defined or install_samba == "yes"
+
+########### Apache  installation ##############
+
+# Execute using tags: ansible-playbook -i inventory --tags install_httpd site.yaml
+# OR
+# Execute using extra variable: ansible-playbook -i inventory site.yaml -e install_httpd=yes
+
+- name: Configure HTTPD server
+  import_playbook: 02.httpd/apache_server.yaml
+  when: install is defined and install == "yes" or install_httpd is defined or install_httpd == "yes"
+
+
+...

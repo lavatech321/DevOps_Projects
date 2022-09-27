@@ -1,5 +1,0 @@
-# This playbook installs Samba-Server on RHEL/CENTOS servers
----
-- import_playbook: samba/samba_server.yaml
-- import_playbook: samba/samba_client.yaml
-...

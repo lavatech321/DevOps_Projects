@@ -1,0 +1,42 @@
+---
+- name: Uninstalling samba server
+  hosts: master
+  gather_facts: no
+  tags:
+    - destroy_samba_server
+    - destroy_samba
+    - destroy
+  vars_files:
+    - vars.yaml
+  tasks:
+      - name: Uninstalling samba packages
+        yum:
+          name: "{{ item }}"
+          state: absent
+        when: item not in ["firewalld", "python3-firewall"]
+        loop: "{{ package_list }}"
+
+      - name: Remove samba share directory
+        file:
+          path: /smbshared
+          state: absent
+
+      - name: Remove samba user
+        user:
+          name: "{{ item }}"
+          state: absent
+        loop: "{{ samba_users }}"
+
+      - name: Remove content in samba config file
+        blockinfile:
+          path: /etc/samba/smb.conf
+          create: yes
+          state: absent
+          block: |
+            [tester]
+                comment = smb dir for testing team
+                path = /smbshared
+                valid users = rohit, sudhanshu
+                write list = sudhanshu
+
+

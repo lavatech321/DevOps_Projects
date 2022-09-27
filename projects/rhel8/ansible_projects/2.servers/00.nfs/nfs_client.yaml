@@ -1,5 +1,11 @@
 ---
 - hosts: master
+  vars:
+    flag: false
+  tags:
+    - install_nfs_client
+    - install_nfs
+    - install
   tasks:
     - name: Capture IPV4 address
       shell: "hostname -I | cut -d ' ' -f 2"
@@ -9,32 +15,99 @@
       set_fact:
         server_ip: "{{ ipv4.stdout }}"
 
-- hosts: workers
+- hosts: worker1
+  vars:
+    flag: false
+  tags:
+    - install_nfs_client
+    - install_nfs
+    - install
   tasks:
-    - name: Put SELinux in permissive mode
-      selinux:
-        policy: targeted
-        state: permissive
+    - block:
+      - name: Put SELinux in permissive mode
+        selinux:
+          policy: targeted
+          state: permissive
 
-    - name: Install nfs client package
-      yum:
-        name: nfs-utils
-        state: present
+      - name: Install nfs client package
+        yum:
+          name: nfs-utils
+          state: present
 
-    - name: "show all nfs-shares"
-      shell: "showmount -e {{ hostvars['master']['server_ip'] }}"
-      register: share_output
+      - name: "show all nfs-shares"
+        shell: "showmount -e {{ hostvars['master']['server_ip'] }}"
+        register: share_output
+        ignore_errors: yes
 
-    - name: "Display all nfs-shares"
-      debug:
-        msg: "{{ share_output.stdout }}"
+      - name: "Display all nfs-shares"
+        debug:
+          msg: "{{ share_output.stdout }}"
+        ignore_errors: yes
 
-    - name: mount nfs folder
-      mount:
-        src: "{{ hostvars['master']['server_ip'] }}:/details"
-        path: /mnt/nfs
-        state: mounted
-        fstype: nfs
-        opts: rw,sync
+      - name: "Mount nfs folder"
+        mount:
+          src: "{{ hostvars['master']['server_ip'] }}:/details"
+          path: /mnt/nfs
+          state: mounted
+          fstype: nfs
+          opts: rw,sync
+
+      - name: "Set configuration status"
+        set_fact:
+          flag: true
+
+      rescue:
+      - name: Remove nfs client package
+        yum:
+          name: nfs-utils
+          state: absent
+
+      - name: Unmount network share
+        mount:
+          state: unmounted
+          path: /mnt/nfs
+
+      - name: Remove nfs mount folder
+        file:
+          state: absent
+          path: /mnt/nfs
+
+      - name: "Set configuration status"
+        set_fact:
+          flag: false
+
+      always:
+      - name: "Save client mount details"
+        local_action:
+          module: lineinfile
+          line: "NFS Client Mount Directory: /mnt/nfs"
+          dest: /tmp/infodir/nfs/output.txt
+          regexp: "NFS Client"
+
+        run_once: true
+        delegate_to: master
+
+      - name: "Capturing details from /tmp/infodir/nfs/output.txt"
+        shell: cat /tmp/infodir/nfs/output.txt
+        register: output
+        delegate_to: master
+
+      - name: "Displaying details of /tmp/infodir/nfs/output.txt"
+        debug: msg='{{ output.stdout.split("\n") }}'
+        delegate_to: master
+
+      - name: "Sending an e-mail using Gmail SMTP servers"
+        mail:
+          host: 'smtp.gmail.com'
+          port: '587'
+          username: 'kripakoth@gmail.com'
+          password: 'qsmdqpsntljxatan'
+          to: 'Yogita Soni <yogitasoni9312@gmail.com>'
+          subject: 'NFS Client status'
+          body: "{{ 'NFS client deployed successfully' if flag == true else 'NFS client not deployed' }}"
+        delegate_to: localhost
+        run_once: true
+
 ...
+
 

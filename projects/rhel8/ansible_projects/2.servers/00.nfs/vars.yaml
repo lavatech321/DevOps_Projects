@@ -1,0 +1,18 @@
+folders:
+  - /details
+
+folder_share:
+  /details: worker1
+
+ansible_python_interpreter: /usr/bin/python3.6
+
+package_list:
+  - nfs-utils
+  - python3-firewall
+  - firewalld
+
+firewall_service:
+  - nfs
+  - rpc-bind
+  - mountd
+

@@ -1,76 +1,129 @@
 ---
 - hosts: masters
+  vars_files:
+    - vars.yaml
   vars:
-    packages:
-      - httpd
-      - firewalld
-      - python3-firewall
-    ansible_python_interpreter: /usr/bin/python3.6
-    code_location:
-      - website_code/website1
-      - website_code/website2
-      - website_code/website3
-    firewall_settings:
-      - 80/tcp
-      - 8800/tcp
-      - 8900/tcp
-    ports:
-      - 80
-      - 8800
-      - 8900
-    details:
-      website1: [ "80" , "abcfarms.example.com" , "webmaster@abcfarms.example.com" , "logs/website1_error_log" , "logs/website1_access_log" ]
-      website2: [ "8800" , "abcf.example.com" , "webmaster@abc.example.com" , "logs/website2_error_log" , "logs/website2_access_log" ]
-      website3: [ "8900" , "farms.example.com" , "webmaster@farms.example.com" , "logs/website3_error_log" , "logs/website3_access_log" ]
-
+    flag: false
   tasks:
-    - name: Package installation
-      yum:
-        name: "{{ item }}"
-        state: present
-      loop: 
-        - "{{ packages }}"
+    - block:
+      - name: Package installation
+        yum:
+          name: "{{ item }}"
+          state: present
+        loop:  "{{ packages }}"
 
-    - name: Configuration setting
-      template:
-        src: webserver.j2
-        dest: /etc/httpd/conf.d/
-      notify: 
-        - restart_me
+      - name: Configuration setting
+        template:
+          src: webserver.conf.j2
+          dest: /etc/httpd/conf.d/webserver.conf
+        notify: 
+          - restart_me
 
-    - name: Copy Website code
-      copy: 
-        src: "{{ item }}"
-        dest: "/var/www/html"
-      loop:
-        - "{{ code_location }}"
-      notify: 
-        - restart_me
+      - name: Copy Website code
+        copy: 
+          src: "{{ item }}"
+          dest: "/var/www/html"
+        loop: "{{ code_location }}"
+        notify: 
+          - restart_me
 
-    - name: Restart service
-      service:
-        name: httpd
-        state: started
+      - name: Restart service
+        service:
+          name: httpd
+          state: started
+ 
+      - name: Enable firewall services for httpd
+        firewalld:
+          port: "{{ item }}"
+          permanent: yes
+          state: enabled
+          immediate: yes
+        loop: "{{ firewall_settings }}"
 
-    - name: Enable firewall services for httpd
-      firewalld:
-        port: "{{ item }}"
-        permanent: yes
-        state: enabled
-        immediate: yes
-      loop:
-        - "{{ firewall_settings }}"
+        #- name: Testing websites
+        #command: "curl http://master:{{ item }}"
+        #loop: "{{ ports }}"
 
-    - name: Testing website 1
-      command: "curl http://master:{{ item }}"
-      loop:
-        - "{{ ports }}"
+      - name: Put SELinux in permissive mode
+        selinux:
+          policy: targeted
+          state: permissive
 
-    - name: Put SELinux in permissive mode
-      selinux:
-        policy: targeted
-        state: permissive
+      - name: "Set configuration status"
+        set_fact:
+          flag: true
 
+
+      rescue:
+      - name: Apache Package uninstallation
+        yum:
+          name: "{{ item }}"
+          state: present
+        when: item not in ["firewalld", "python3-firewall"]
+        loop:  "{{ packages }}"
+
+      - name: Remove configuration setting
+        file:
+          dest: /etc/httpd/conf.d/webserver.conf
+          state: absent
+
+      - name: Remove Website code
+        file: 
+          dest: "/var/www/html/{{ item }}"
+          state: absent
+        loop: "{{ code_location }}"
+
+      - name: Disable firewall services for httpd
+        firewalld:
+          port: "{{ item }}"
+          permanent: no
+          state: disabled
+          immediate: no
+        loop: "{{ firewall_settings }}"
+
+      - name: "Set configuration status"
+        set_fact:
+          flag: false
+
+      always:
+      - name: Create Apache server details folder
+        local_action: file dest="/tmp/infodir/httpd" recurse=yes state=directory
+        run_once: true
+
+      - stat: path=/tmp/infodir/httpd/output.txt
+        register: file_state
+
+      - name: Capture IPV4 address
+        shell: "hostname -I | cut -d ' ' -f 2"
+        register: ipv4
+
+      - name: Save the IP address
+        set_fact:
+          server_ip: "{{ ipv4.stdout }}"
+
+      - name: Prepare file to save apache details
+        shell: "> /tmp/infodir/httpd/output.txt"
+        when: file_state.stat.exists is defined and not file_state.stat.exists
+
+      - name: "Save Apache server details in /tmp/infodir/httpd/output.txt"
+        lineinfile:
+          line: "Website URL - http://{{ server_ip }}:{{ item }}"
+          dest: /tmp/infodir/httpd/output.txt
+          create: yes
+        loop: "{{ ports }}"
+        when: file_state.stat.exists is defined and not file_state.stat.exists
+
+      - name: Sending an e-mail using Gmail SMTP servers
+        mail:
+          host: 'smtp.gmail.com'
+          port: '587'
+          username: 'kripakoth@gmail.com'
+          password: 'qsmdqpsntljxatan'
+          to: 'Yogita Soni <yogitasoni9312@gmail.com>'
+          subject: 'Apache server status'
+          body: "{{ 'HTTPD server deployed successfully' if flag == true else 'HTTPD server not deployed' }}"
+        delegate_to: localhost
+        run_once: true
 
   handlers:   
     - name: restart_me

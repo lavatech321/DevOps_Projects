@@ -1,0 +1,39 @@
+---
+########### NFS Destroy ##############
+# Execute using tags: ansible-playbook -i inventory --tags destroy_nfs site.yaml
+# OR
+# Execute using extra variable: ansible-playbook -i inventory site.yaml -e destroy_nfs=yes
+
+
+- name: Destroy NFS client
+  import_playbook: 00.nfs/destroy_nfs_client.yaml 
+  when: destroy is defined and destroy == "yes"  or destroy_nfs is defined and destroy_nfs == "yes"
+
+- name: Destroy NFS server
+  import_playbook: 00.nfs/destroy_nfs_server.yaml 
+  when: destroy is defined and destroy == "yes"  or destroy_nfs is defined and destroy_nfs == "yes"
+
+
+########### Samba Destroy ##############
+# Execute using tags: ansible-playbook -i inventory --tags destroy_samba site.yaml
+# OR
+# Execute using extra variable: ansible-playbook -i inventory site.yaml -e destroy_samba=yes
+
+- name: Destroy Samba server
+  import_playbook: 01.samba/destroy_samba_server.yaml
+  when: destroy is defined and destroy == "yes" or destroy_samba is defined and destroy_samba == "yes"
+
+- name: Destroy Samba client
+  import_playbook: 01.samba/destroy_samba_client.yaml
+  when: destroy is defined and destroy == "yes" or destroy_samba is defined and destroy_samba == "yes"
+
+########### Apache Destroy ##############
+# Execute using tags: ansible-playbook -i inventory --tags destroy_httpd site.yaml
+# OR
+# Execute using extra variable: ansible-playbook -i inventory site.yaml -e destroy_httpd=yes
+
+- name: Destroy HTTPD server
+  import_playbook: 02.httpd/destroy_apache_server.yaml
+  when: destroy is defined and destroy == "yes" or destroy_httpd is defined and destroy_httpd == "yes"
+
+...
