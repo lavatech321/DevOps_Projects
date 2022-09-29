@@ -1,0 +1,28 @@
+---
+- hosts: worker1
+  gather_facts: no
+  tags:
+    - destroy_samba_client
+    - destroy_samba
+    - destroy
+  vars_files:
+    - vars.yaml
+  tasks:
+      - name: Uninstalling packages
+        yum:
+          name: "{{ item }}"
+          state: absent
+        loop: "{{ client_package_list }}"
+
+      - name: Unmount network share
+        mount:
+          state: unmounted
+          path: /mount_samba
+
+      - name: Remove directory 
+        file:
+          path: /mount_samba
+          state: absent
+
+...
+

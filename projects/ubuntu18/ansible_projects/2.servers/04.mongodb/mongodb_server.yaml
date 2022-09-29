@@ -1,0 +1,170 @@
+---
+- name: "Install mongoDB server"
+  hosts: master
+  gather_facts: no
+  tags:
+    - install_mongodb_server
+    - install_mongodb
+    - install
+
+  vars_files:
+    - vars.yaml
+
+  tasks:
+    - block:
+        - name: Add mongodb user
+          user:
+            name: mongod
+            state: present
+
+        - name: "Create mongodb folder"
+          file:
+            name: "{{ item }}"
+            state: directory
+          loop: "{{ folders }}"
+
+        - name: "Set mongodb ownership"
+          file:
+            name: "{{ item }}"
+            state: directory
+            owner: mongod
+            recurse: yes
+          loop:
+            - "/opt/mongodb"
+            - "/var/lib/mongo"
+
+        - name: Set group ownership of mongodb
+          file:
+            name: /opt/mongodb
+            group: mongod
+            recurse: yes
+
+        - name: "Download mongodb"
+          unarchive:
+            src: https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-4.0.5.tgz
+            dest: /opt/mongodb
+            remote_src: yes
+            extra_opts: [--strip-components=1]
+       
+        - name: Create mongodb configuration file
+          blockinfile:
+            path: /etc/mongod.conf
+            create: yes
+            block: |
+              storage:
+                dbPath: "/var/lib/mongo"
+                journal:
+                  enabled: true
+              net:
+                port: 27017
+                bindIp: "127.0.0.1"
+
+
+        - name: Create systemd daemon for mongodb
+          blockinfile:
+            path: /etc/systemd/system/mongod.service
+            create: yes
+            block: |
+              [Unit]
+              Description=MongoDB
+              After=syslog.target network.target
+
+              [Service]
+              Type=simple
+              User=mongod
+              Group=mongod
+              ExecStart=/opt/mongodb/bin/mongod --config /etc/mongod.conf
+
+              [Install]
+              WantedBy=multi-user.target
+
+        - name: Put SELinux in permissive mode
+          selinux:
+            policy: targeted
+            state: permissive
+
+        - name: Reload daemon
+          shell: systemctl daemon-reload
+
+        - name: Restart mongodb
+          service:
+            name: mongod
+            state: restarted
+            
+        - name: Add mongodb path variable
+          lineinfile:
+            path: /root/.bash_profile
+            line: PATH=$PATH:/opt/mongodb/bin
+
+        - name: Enable "mongo" command
+          shell: source /root/.bash_profile
+          args:
+            executable: /bin/bash
+
+        - name: "Set configuration status"
+          set_fact:
+            flag: true
+
+      rescue:
+        - name: Remove mongodb user
+          user:
+            name: mongod
+            state: absent
+
+        - name: "Remove mongodb folder"
+          file:
+            name: "{{ item }}"
+            state: absent
+          loop: 
+            - "{{ folders }}"
+            - "/opt/mongodb"
+            - "/etc/mongod.conf"
+            - "/etc/systemd/system/mongod.service"
+            - "/tmp/mongodb*"
+
+        - name: Add mongodb path variable
+          lineinfile:
+            path: /root/.bash_profile
+            line: PATH=$PATH:/opt/mongodb/bin
+            state: absent
+
+        - name: "Set configuration status"
+          set_fact:
+            flag: false
+
+      always:
+      - name: Create Mongodb server details folder
+        local_action: file dest="/tmp/infodir/mongodb" recurse=yes state=directory
+
+      - stat: path=/tmp/infodir/mongodb/output.txt
+        register: file_state
+
+      - name: "Save Apache server details in /tmp/infodir/mongodb/output.txt"
+        lineinfile:
+          line: "Mongodb Server Login: mongo"
+          dest: /tmp/infodir/mongodb/output.txt
+          create: yes
+        when: file_state.stat.exists is defined and not file_state.stat.exists
+
+      - name: "Capturing details from /tmp/infodir/mongodb/output.txt"
+        shell: cat /tmp/infodir/mongodb/output.txt
+        register: output
+
+      - name: "Displaying details of /tmp/infodir/mongodb/output.txt"
+        debug: msg='{{ output.stdout.split("\n") }}'
+
+      - name: Sending an e-mail using Gmail SMTP servers
+        mail:
+          host: 'smtp.gmail.com'
+          port: '587'
+          username: 'kripakoth@gmail.com'
+          password: 'qsmdqpsntljxatan'
+          to: 'Yogita Soni <yogitasoni9312@gmail.com>'
+          subject: 'Mongodb server status'
+          body: "{{ 'Mongodb server deployed successfully' if flag == true else 'Mongodb server not deployed' }}"
+        delegate_to: localhost
+        run_once: true
+
+...
+
+

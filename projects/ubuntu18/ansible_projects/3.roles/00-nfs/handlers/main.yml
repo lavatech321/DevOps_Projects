@@ -1,0 +1,7 @@
+---
+# handlers file for 00-nfs
+- name: restart_me
+  service:
+     name: nfs-server
+     state: reloaded
+

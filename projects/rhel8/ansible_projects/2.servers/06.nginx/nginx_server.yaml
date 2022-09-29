@@ -1,0 +1,151 @@
+
+---
+- name: "Install nginx server"
+  hosts: master
+  become: yes
+  become_method: sudo
+  become_user: root
+  gather_facts: no
+  tags:
+    - install_nginx_server
+    - install_nginx
+    - install
+
+  vars_files:
+    - vars.yaml
+  
+  tasks:
+    - block:
+        - name: Install Nginx packages
+          dnf:
+            name: "{{ item }}"
+            state: present
+          loop: "{{ packages }}"
+          tags:
+            - install
+
+        - name: Capture IPV4 address
+          shell: "hostname -I | cut -d ' ' -f 2"
+          register: ipv4
+
+        - name: Save the IP address
+          set_fact:
+            server_ip: "{{ ipv4.stdout }}"
+
+        - name: Replace 80 to 8888 in nginx.conf
+          replace:
+            path: /etc/nginx/nginx.conf
+            regexp: '80'
+            replace: '8888'
+          notify:
+            - restart_me
+
+        - name: Configuration setting
+          template:
+            src: webserver.j2
+            dest: /etc/nginx/conf.d/webserver.conf
+          notify:
+            - restart_me
+
+        - name: Copy Website code
+          copy:
+            src: "{{ item }}"
+            dest: "/usr/share/nginx/html/"
+          loop:  "{{ code_location }}"
+
+        - name: Restart nginx daemon
+          service:
+            name: nginx
+            state: restarted
+            enabled: yes
+
+        - name: Enable firewall services for nginx
+          firewalld:
+            port: "{{ item }}"
+            permanent: yes
+            state: enabled
+            immediate: yes
+          loop: "{{ firewall_settings }}"
+
+        - name: Testing websites
+          command: "curl http://{{ server_ip }}:{{ item }}"
+          loop: "{{ ports }}"
+
+        - name: "Set configuration status"
+          set_fact:
+            flag: true
+
+      rescue:
+      - name: Nginx Package uninstallation
+        yum:
+          name: "{{ item }}"
+          state: absent
+        when: item not in ["firewalld", "python3-firewall"]
+        loop:  "{{ packages }}"
+
+      - name: Replace 8888 to 80 in nginx.conf
+        replace:
+          path: /etc/nginx/nginx.conf
+          regexp: '8888'
+          replace: '80'
+
+      - name: Remove configuration setting
+        file:
+            state: absent
+            name: /etc/nginx/conf.d/webserver.conf
+
+      - name: Remove Website code
+        file:
+          dest: "/var/www/html/{{ item }}"
+          state: absent
+        loop: "{{ code_location }}"
+
+      - name: Disable firewall services for nginx
+        firewalld:
+          port: "{{ item }}"
+          permanent: no
+          state: disabled
+          immediate: no
+        loop: "{{ firewall_settings }}"
+
+      - name: "Set configuration status"
+        set_fact:
+          flag: false
+
+      always:
+      - name: Create Nginx server details folder
+        local_action: file dest="/tmp/infodir/nginx" recurse=yes state=directory
+        run_once: true
+
+      - stat: path=/tmp/infodir/nginx/output.txt
+        register: file_state
+
+      - name: Capture IPV4 address
+        shell: "hostname -I | cut -d ' ' -f 2"
+        register: ipv4
+
+      - name: Save the IP address
+        set_fact:
+          server_ip: "{{ ipv4.stdout }}"
+
+      - name: "Save Nginx server details in /tmp/infodir/nginx/output.txt"
+        lineinfile:
+          line: "Website URL - http://{{ server_ip }}:{{ item }}"
+          dest: /tmp/infodir/nginx/output.txt
+          create: yes
+        loop: "{{ ports }}"
+        when: file_state.stat.exists is defined and not file_state.stat.exists
+
+      - name: "Capturing details from /tmp/infodir/nginx/output.txt"
+        shell: cat /tmp/infodir/nginx/output.txt
+        register: output
+
+      - name: "Displaying details of /tmp/infodir/nginx/output.txt"
+        debug: msg='{{ output.stdout.split("\n") }}'
+
+  handlers:
+    - name: restart_me
+      service:
+        name: nginx
+        state: reloaded
+...

@@ -1,0 +1,59 @@
+---
+- hosts: localhost
+  tasks:
+     ############ Install aws-cli #################
+     - name: Download aws-cli zip file
+       get_url:
+         url: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+         dest: /tmp/awscliv2.zip
+
+     - name: Install zip utility
+       dnf:
+         name: zip
+         state: present
+
+     - name: Unarchive a file that is already on the remote machine
+       unarchive:
+         src: /tmp/awscliv2.zip
+         dest: /tmp/
+         remote_src: yes
+
+     - name: Check if aws cli is present or not
+       shell: which aws
+       register: aws_install 
+
+     - name: Execute the compressed file
+       shell:
+         cmd: /tmp/aws/install
+       when: aws_install is failed
+
+     ############ Install boto library #################
+     - name: install boto 
+       pip:
+         name: "{{ item }}"
+         state: present
+       loop:
+         - boto
+         - boto3
+
+     ############ Create AWS credentials file #################
+     - blockinfile:
+         path: /root/.aws/credentials
+         block: |
+           [default]
+           aws_secret_access_key = HOSeojSqP5h2BrtDiO74ZRErHlUCL5RwGcweRud8
+           aws_access_key_id = AKIAU772MDGF2APFVPOB
+         create: yes
+
+
+     ############ Configure AWS Instance #################
+     - ec2_instance:
+         key_name: mykey
+         instance_type: t2.micro
+         image: "ami-05fa00d4c63e32376"
+         wait: yes
+         count: 3
+         vpc_subnet_id: subnet-29e63245
+         assign_public_ip: yes
+
+...

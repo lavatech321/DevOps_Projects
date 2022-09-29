@@ -1,0 +1,44 @@
+---
+- hosts: master
+  gather_facts: no
+  vars_files: vars.yaml
+  tags: 
+    - destroy_nfs_server
+    - destroy_nfs
+    - destroy
+  tasks:
+      - name: Uninstall nfs package
+        yum:
+          name: "{{ item }}"
+          state: absent
+        when: item not in ["firewalld", "python3-firewall"]
+        loop: "{{ package_list }}"
+
+      - name: Remove nfs share folder
+        file:
+          name: "{{ item }}"
+          state: absent
+        loop: "{{ folders }}"
+
+      - name: Remove nfs files
+        file:
+          state: absent
+          dest: "{{ item }}"
+        loop: 
+          - /etc/exports
+          - /tmp/infodir/nfs/output.txt
+
+      - name: Confirm firewalld is running
+        service:
+          name: firewalld
+          state: started
+
+      - name: Remove firewall services for nfs
+        firewalld:
+          service: "{{ item }}"
+          permanent: no
+          state: disabled
+        loop: "{{ firewall_service }}"
+
+
+...

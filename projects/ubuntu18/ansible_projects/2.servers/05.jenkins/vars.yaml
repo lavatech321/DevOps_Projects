@@ -1,0 +1,8 @@
+ansible_python_interpreter: /usr/bin/python3.6
+flag: false
+packages:
+   - java-11-openjdk-devel
+   - jenkins
+   - python3-firewall
+   - firewalld
+

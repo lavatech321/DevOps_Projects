@@ -1,0 +1,110 @@
+---
+- hosts: master
+  gather_facts: no
+  tags:
+    - install_samba_client
+    - install_samba
+    - install
+  tasks:
+    - name: Capture IPV4 address
+      shell: "hostname -I | cut -d ' ' -f 2"
+      register: ipv4
+
+    - name: Save the IP address
+      set_fact:
+        server_ip: "{{ ipv4.stdout }}"
+
+- hosts: worker1
+  gather_facts: no
+  tags:
+    - install_samba_client
+    - install_samba
+    - install
+  vars_files:
+    - vars.yaml
+  vars:
+    flag: false
+  tasks:
+    - block:
+      - name: installing packages
+        yum:
+          name: "{{ item }}"
+          state: present
+        loop: "{{ client_package_list }}"
+
+      - name: create a directory to mount samba share
+        file:
+          path: /mount_samba
+          state: directory
+          owner: root
+          group: root
+          mode: '777'
+
+      - name: Mount network share
+        mount:
+          src: "//{{ hostvars['master']['server_ip'] }}/tester"
+          path: /mount_samba
+          fstype: cifs
+          opts: 'username=rohit,password=r@12345'
+          state: mounted
+
+      - name: "Set configuration status"
+        set_fact:
+          flag: true
+
+      rescue:
+      - name: Uninstalling packages
+        yum:
+          name: "{{ item }}"
+          state: absent
+        loop: "{{ client_package_list }}"
+
+      - name: Unmount network share
+        mount:
+          state: unmounted
+          path: /mount_samba
+
+      - name: Remove directory 
+        file:
+          path: /mount_samba
+          state: absent
+
+      - name: "Set configuration status"
+        set_fact:
+          flag: false
+
+      always:
+      - name: "Save client mount details"
+        local_action:
+          module: lineinfile
+          line: "Samba Client Mount Directory: /mount_samba"
+          dest: /tmp/infodir/samba/output.txt
+          regexp: "Samba Client"
+
+        run_once: true
+        delegate_to: master
+
+      - name: "Capturing details from /tmp/infodir/samba/output.txt"
+        shell: cat /tmp/infodir/samba/output.txt
+        register: output
+        delegate_to: master
+
+      - name: "Displaying details of /tmp/infodir/samba/output.txt"
+        debug: msg='{{ output.stdout.split("\n") }}'
+        delegate_to: master
+
+      - name: Sending an e-mail using Gmail SMTP servers
+        mail:
+          host: 'smtp.gmail.com'
+          port: '587'
+          username: 'kripakoth@gmail.com'
+          password: 'qsmdqpsntljxatan'
+          to: 'Yogita Soni <yogitasoni9312@gmail.com>'
+          subject: 'Samba client status'
+          body: "{{ 'Samba client deployed successfully' if flag == true else 'Samba client not deployed' }}"
+        delegate_to: localhost
+        run_once: true
+
+
+...
+

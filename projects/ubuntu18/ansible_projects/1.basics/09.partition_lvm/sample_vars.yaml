@@ -1,0 +1,21 @@
+
+# List
+packages:
+  - nfs-utils
+  - httpd
+  - firewalld
+  - python3-firewall
+
+# Dictionary
+folder_share:
+  /details: 10.23.23.10
+  /project: 192.168.3.4
+
+# Combination of List and Dictionary
+user_details:
+  ravi: [ "8700" ,"/bin/bash" , "/mnt/ravi"]
+  shami: [ "8800","/bin/bash" , "/mnt/shami"]
+  kavi: [ "8900" ,"/bin/bash" , "/mnt/kavi"]
+
+
+

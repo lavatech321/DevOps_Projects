@@ -1,0 +1,48 @@
+# This playbook contains some examples related editing a file using lineinfile module
+---
+- hosts: localhost
+  gather_facts: yes
+  tasks:
+    - name: Add a line to a file at the end
+      lineinfile:
+        path: /etc/hosts
+        line: 192.168.1.10  server.example.com
+
+    - name: Add a line to a file if the file does not exist
+      lineinfile:
+        path: /tmp/testfile
+        create: yes
+        line: 192.168.1.99 foo.lab.net foo
+
+    - name: Replace line having first word starting with "SELINUX="
+      lineinfile:
+        path: /etc/selinux/config
+        regexp: '^SELINUX='
+        line: SELINUX=permissive
+
+    - name: Replace line having first word starting with "^Listen", with location
+      lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^Listen '
+        line: Listen 8080
+        insertafter: '^#Listen '
+
+    - name: Replace a entry by searching an string
+      lineinfile:
+        path: /etc/hosts
+        search_string: '127.0.0.1'
+        line: 127.0.0.1 localhost
+
+    - name: Remove line starting with word "%wheel"
+      lineinfile:
+        path: /etc/sudoers
+        regexp: '^%wheel'
+        state: absent
+        validate: /usr/sbin/visudo -cf %s
+
+    - name: Remove a entry by searching an string
+      lineinfile:
+        path: /etc/hosts
+        search_string: '127.0.0.1'
+        state: absent
+...

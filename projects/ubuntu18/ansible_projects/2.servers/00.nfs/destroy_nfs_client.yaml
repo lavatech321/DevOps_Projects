@@ -1,0 +1,22 @@
+---
+- hosts: worker1
+  tags:
+    - destroy_nfs_client
+    - destroy_nfs
+    - destroy
+  tasks:
+      - name: Remove nfs client package
+        yum:
+          name: nfs-utils
+          state: absent
+
+      - name: Unmount nfs share
+        mount:
+          path: /mnt/nfs
+          state: unmounted
+
+      - name: Remove nfs mount folder
+        file:
+          state: absent
+          path: /mnt/nfs
+...

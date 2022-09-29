@@ -1,0 +1,7 @@
+---
+# handlers file for 01-samba
+- name: restart_me
+  service:
+    name: smb
+    state: reloaded
+

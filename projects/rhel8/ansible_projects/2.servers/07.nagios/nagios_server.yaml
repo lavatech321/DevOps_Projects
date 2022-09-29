@@ -1,0 +1,172 @@
+---
+- name: "Install nagios server"
+  hosts: master
+  become: yes
+  become_method: sudo
+  become_user: root
+  gather_facts: no
+  tags:
+    - install_nagios_server
+    - install_nagios
+    - install
+  vars_files:
+    - vars.yaml
+
+  tasks:
+    - block:
+        - name: Install nagios packages
+          dnf:
+            name: "{{ item }}"
+            state: present
+          loop: "{{ packages }}"
+
+        - name: Restart apache daemon
+          service:
+            name: httpd
+            state: restarted
+
+        - name: Create folder for nagios
+          file:
+            name: "{{ item }}"
+            state: directory
+          loop:
+            - /tmp/nagios
+            - /tmp/nagios-plugin
+
+        - name: Download nagios binary
+          unarchive:
+            src: https://github.com/NagiosEnterprises/nagioscore/archive/nagios-4.4.3.tar.gz
+            dest: /tmp/nagios
+            remote_src: yes
+            extra_opts: [--strip-components=1]
+
+        - name: Configure nagios
+          command:
+            cmd: "{{ item }}"
+          args:
+            chdir: /tmp/nagios
+          loop:
+            - "./configure"
+            - "make all"
+            - "make install-groups-users"
+
+        - name: Modify nagios user
+          user:
+            name: apache
+            groups: nagios
+            append: yes
+
+        - name: Configure nagios
+          command:
+            cmd: "{{ item }}"
+          args:
+            chdir: /tmp/nagios
+          loop:
+            - "make install"
+            - "make install-daemoninit"
+            - "make install-commandmode"
+            - "make install-config"
+            - "make install-webconf"
+            - "echo 'redhat' | htpasswd -i -c /usr/local/nagios/etc/htpasswd.users nagiosadmin"
+
+        - name: Download nagios plugin
+          unarchive:
+            src: https://github.com/nagios-plugins/nagios-plugins/archive/release-2.2.1.tar.gz
+            dest: /tmp/nagios-plugin
+            remote_src: yes
+            extra_opts: [--strip-components=1]
+
+        - name: Configure nagios plugin
+          command:
+            cmd: "{{ item }}"
+          args:
+            chdir: /tmp/nagios-plugin
+          loop:
+            - "./tools/setup"
+            - "./configure"
+            - "make"
+            - "make install"
+
+        - name: Restart apache and nagios daemon
+          service:
+            name: "{{ item }}"
+            state: restarted
+          loop:
+            - httpd
+            - nagios
+
+        - name: Enable firewall services for nginx
+          firewalld:
+            service: "{{ item }}"
+            permanent: yes
+            state: enabled
+            immediate: yes
+          loop: "{{ ports }}"
+
+        - name: "Set configuration status"
+          set_fact:
+            flag: true
+
+      rescue:
+      - name: Nagios Package uninstallation
+        yum:
+          name: "{{ item }}"
+          state: absent
+        when: item not in ["firewalld", "python3-firewall"]
+        loop:  "{{ packages }}"
+
+      - name: Remove folder for nagios
+        file:
+            name: "{{ item }}"
+            state: absent
+        loop:
+            - /tmp/nagios
+            - /tmp/nagios-plugin
+
+      - name: Disable firewall services for nginx
+        firewalld:
+          service: "{{ item }}"
+          permanent: no
+          state: disabled
+          immediate: no
+        loop: "{{ ports }}"
+
+      - name: "Set configuration status"
+        set_fact:
+          flag: false
+
+      always:
+      - name: Create Nagios server details folder
+        local_action: file dest="/tmp/infodir/nagios" recurse=yes state=directory
+        run_once: true
+
+      - stat: path=/tmp/infodir/nagios/output.txt
+        register: file_state
+
+      - name: Capture IPV4 address
+        shell: "hostname -I | cut -d ' ' -f 2"
+        register: ipv4
+
+      - name: Save the IP address
+        set_fact:
+          server_ip: "{{ ipv4.stdout }}"
+
+      - name: "Usage details in /tmp/infodir/nagios/output.txt"
+        blockinfile:
+            path: /tmp/infodir/nagios/output.txt
+            create: yes
+            marker: "######## This file contains details on nagios server usage ########"
+            block: |
+                "URL: http://{{ server_ip }}/nagios
+                USERNAME: nagiosadmin
+                PASSWORD: nagios"
+        when: file_state.stat.exists is defined and not file_state.stat.exists
+
+      - name: "Capturing details from /tmp/infodir/nagios/output.txt"
+        shell: cat /tmp/infodir/nagios/output.txt
+        register: output
+
+      - name: "Displaying details of /tmp/infodir/nginx/output.txt"
+        debug: msg='{{ output.stdout.split("\n") }}'
+
+...

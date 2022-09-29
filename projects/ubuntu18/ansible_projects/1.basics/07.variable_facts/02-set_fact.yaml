@@ -1,0 +1,45 @@
+# This playbook contains example related how to set facts
+
+
+######################################################################################
+---
+# This example shows how to save IP address as fact and use it on another host
+- hosts: localhost
+  tasks:
+    - name: Capture IPV4 address
+      shell: "hostname -I | cut -d ' ' -f 2"
+      register: ipv4
+
+    - name: Save the IP address as ansible fact
+      set_fact:
+        server_ip: "{{ ipv4.stdout }}"
+
+- hosts: worker1
+  tasks:
+    - name: Using the newly created ansible fact "server_ip"
+      lineinfile:
+        line: "{{ hostvars['localhost']['server_ip']}}    master.example.com"
+        path: /etc/hosts
+
+######################################################################################
+
+# This example shows how to save content of a file as fact and copy it on another host
+- hosts: localhost
+  tasks:
+    - name: Get SSH public key
+      set_fact:
+        ssh_key_data: "{{lookup('file', '~/.ssh/id_rsa.pub')}}"
+
+
+- hosts: worker1
+  tasks:
+    - name: Copy ssh key content to user's home directory
+      lineinfile:
+        line: "{{ hostvars['localhost']['ssh_key_data']}}"
+        path: /home/vagrant/.ssh/authorized_keys
+
+...
+######################################################################################
+
+
+

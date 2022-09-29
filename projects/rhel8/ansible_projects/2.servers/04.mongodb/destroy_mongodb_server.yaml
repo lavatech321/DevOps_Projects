@@ -1,0 +1,39 @@
+---
+- hosts: master
+  gather_facts: false
+  become: true
+  vars_files:
+    - vars.yaml
+
+  tasks:
+
+        - name: "Remove mongodb folder"
+          file:
+            name: "{{ item }}"
+            state: absent
+          loop: 
+            - "{{ folders }}"
+            - "/opt/mongodb"
+            - "/etc/mongod.conf"
+            - "/etc/systemd/system/mongod.service"
+            - "/tmp/mongodb*"
+
+        - name: Add mongodb path variable
+          lineinfile:
+            path: /root/.bash_profile
+            line: PATH=$PATH:/opt/mongodb/bin
+            state: absent
+
+        - name: "Remove /tmp/infodir/mongodb"
+          file:
+            name: /tmp/infodir/mongodb
+            state: absent
+
+        - name: Remove mongodb user
+          user:
+            name: mongod
+            state: absent
+            force: yes
+...
+
+

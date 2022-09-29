@@ -1,0 +1,29 @@
+---
+- hosts: localhost
+  vars_files:
+    - vars.yaml
+  tasks:
+        - name: Remove Packages
+          yum:
+            name: "{{ item }}"
+            state: absent
+          when: item not in ["firewalld", "python3-firewall"]
+          loop: "{{ list }}"
+
+        - file:
+            name: "/var/lib/mysql"
+            state: absent
+
+        - name: Remove firewall port for mysql
+          firewalld:
+            port: 3306/tcp
+            permanent: no
+            state: disabled
+            immediate: no
+
+        - name: "Remove /tmp/infodir/mysql"
+          file: 
+            name: /tmp/infodir/mysql
+            state: absent
+
+...

@@ -1,0 +1,132 @@
+---
+- name: "Install jenkins server"
+  hosts: master
+  become: yes
+  become_method: sudo
+  become_user: root
+  gather_facts: no
+  tags:
+    - install_jenkins_server
+    - install_jenkins
+    - install
+
+
+  vars_files:
+    - vars.yaml
+
+  tasks:
+     - block:
+       - name: Download jenkins repository
+         get_url:
+           url: "http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo"
+           dest: /etc/yum.repos.d/jenkins.repo
+
+       - name: Import a key from a url
+         rpm_key:
+            state: present
+            key: https://pkg.jenkins.io/redhat/jenkins.io.key
+
+       - name: Package installation
+         dnf:
+           name: "{{ item }}"
+           state: present
+         loop:
+           - "{{ packages }}"
+
+       - name: Permit traffic in default zone on port 8080/tcp
+         firewalld:
+           port: 8080/tcp
+           permanent: yes
+           state: enabled
+           immediate: yes
+
+       - name: Start Jenkins
+         service:
+          name: jenkins
+          state: started
+
+       - name: Put SELinux in permissive mode
+         selinux:
+           policy: targeted
+           state: permissive
+
+       - name: "Set configuration status"
+         set_fact:
+          flag: true
+
+       rescue:
+       - name: Remove jenkins repository
+         file:
+           dest: /etc/yum.repos.d/jenkins.repo
+           state: absent
+
+       - name: Unimport key
+         rpm_key:
+            state: absent
+            key: https://pkg.jenkins.io/redhat/jenkins.io.key
+
+       - name: Package Uninstallation
+         dnf:
+           name: "{{ item }}"
+           state: absent
+         when: item not in ["firewalld", "python3-firewall"]
+         loop:
+           - "{{ packages }}"
+
+       - name: Prevent traffic in default zone on port 8080/tcp
+         firewalld:
+           port: 8080/tcp
+           permanent: no
+           state: disabled
+           immediate: no
+
+       - name: Make jenkins sudo user
+         lineinfile:
+           path: /etc/sudoers
+           state: present
+           line: 'jenkins ALL=(ALL) NOPASSWD: ALL'
+           regex: "jenkins"
+           validate: /usr/sbin/visudo -cf %s
+
+       - name: "Set configuration status"
+         set_fact:
+          flag: false
+
+       always:
+       - name: Create Jenkins server details folder
+         local_action: file dest="/tmp/infodir/jenkins" recurse=yes state=directory
+         run_once: true
+
+       - stat: path=/tmp/infodir/jenkins/output.txt
+         register: file_state
+
+       - name: Capture IPV4 address
+         shell: "hostname -I | cut -d ' ' -f 2"
+         register: ipv4
+
+       - name: Save the IP address
+         set_fact:
+           server_ip: "{{ ipv4.stdout }}"
+
+       - name: "Save Jenkins server details in /tmp/infodir/jenkins/output.txt"
+         local_action:
+           module: lineinfile
+           line: "Jenkins URL - http://{{ server_ip }}:8080"
+           dest: /tmp/infodir/jenkins/output.txt
+           create: yes
+         when: file_state.stat.exists is defined and not file_state.stat.exists
+
+       - name: Sending an e-mail using Gmail SMTP servers
+         mail:
+           host: 'smtp.gmail.com'
+           port: '587'
+           username: 'kripakoth@gmail.com'
+           password: 'qsmdqpsntljxatan'
+           to: 'Yogita Soni <yogitasoni9312@gmail.com>'
+           subject: 'Jenkins server status'
+           body: "{{ 'Jenkins server deployed successfully' if flag == true else 'Jenkins server not deployed' }}"
+         delegate_to: localhost
+         run_once: true
+
+
+

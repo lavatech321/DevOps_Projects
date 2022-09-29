@@ -1,0 +1,135 @@
+---
+- name: "Install wordpress server"
+  hosts: master
+  become: yes
+  become_method: sudo
+  become_user: root
+  gather_facts: no
+  tags:
+    - install_wordpress_server
+    - install_wordpress
+    - install
+  vars_files:
+    - vars.yaml
+
+  tasks:
+    - block:
+      - name: Install apache server
+        dnf:
+          name: "{{ item }}"
+          state: present
+        loop: "{{ packages }}"
+
+      - name: Download wordpress binary
+        unarchive:
+          #src: https://wordpress.org/latest.tar.gz
+          src: latest.tar.gz
+          dest: /tmp/
+          #extra_opts: [--strip-components=1]
+
+      - name: Generate an OpenSSH keypair
+        openssh_keypair:
+          path: /root/.ssh/id_rsa
+          owner: root
+          group: root
+
+      - name: Set authorized key for root user
+        authorized_key:
+          user: root
+          state: present
+          key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+
+      - name: Configure wordpress
+        synchronize:
+          src: /tmp/wordpress
+          dest: /var/www/html
+          mode: pull
+        delegate_to: master
+
+      - name: Set wordpress owner and group
+        file:
+          name: /var/www/html/wordpress
+          owner: apache
+          group: apache
+          recurse: yes
+          state: directory   
+
+      - name: Restart apache daemon
+        service:
+          name: httpd
+          state: restarted
+
+      - name: Permit traffic in default zone for service http
+        firewalld:
+          service: "{{ item }}"
+          permanent: yes
+          state: enabled
+          immediate: yes
+        loop: "{{ ports }}"
+
+      - name: "Set configuration status"
+        set_fact:
+          flag: false
+
+      rescue:
+      - name: Uninstall apache package
+        dnf:
+          name: "{{ item }}"
+          state: absent
+        loop: "{{ packages }}"
+
+      - name: Remove wordpress binary
+        file:
+          name: "{{ item }}"
+          state: absent
+        loop:
+          - /tmp/wordpress
+          - /var/www/html/wordpress
+
+      - name: Remove traffic in default zone for service http
+        firewalld:
+          service: "{{ item }}"
+          permanent: no
+          state: disabled
+          immediate: no
+        loop: "{{ ports }}"
+
+      - name: "Set configuration status"
+        set_fact:
+          flag: false
+
+      always:
+      - name: Create Wordpress server details folder
+        local_action: file dest="/tmp/infodir/wordpress" recurse=yes state=directory
+        run_once: true
+
+      - stat: path=/tmp/infodir/wordpress/output.txt
+        register: file_state
+
+      - name: Capture IPV4 address
+        shell: "hostname -I | cut -d ' ' -f 2"
+        register: ipv4
+
+      - name: Save the IP address
+        set_fact:
+          server_ip: "{{ ipv4.stdout }}"
+
+      - name: "Usage details in /tmp/infodir/wordpress/output.txt"
+        blockinfile:
+            path: /tmp/infodir/wordpress/output.txt
+            create: yes
+            marker: "######## This file contains details on wordpress server usage ########"
+            block: |
+                "URL: http://{{ server_ip }}/wordpress/"
+        when: file_state.stat.exists is defined and not file_state.stat.exists
+
+      - name: "Capturing details from /tmp/infodir/wordpress/output.txt"
+        shell: cat /tmp/infodir/wordpress/output.txt
+        register: output
+
+      - name: "Displaying details of /tmp/infodir/wordpress/output.txt"
+        debug: msg='{{ output.stdout.split("\n") }}'
+
+
+...
+

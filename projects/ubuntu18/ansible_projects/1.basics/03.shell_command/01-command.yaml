@@ -1,0 +1,18 @@
+# This playbook contains some examples related to command module
+---
+- hosts: localhost
+  gather_facts: yes
+  tasks:
+    - name: Execute a command to add service to firewall
+      command: "firewall-cmd --permanent --add-service=samba"
+
+    - name: Execute a command to reload firewall using cmd option
+      command:
+        cmd: "firewall-cmd --reload"
+
+    - name: Execute a command and create a file, if file is already present, dont execute command
+      command: echo "Hello World" > /tmp/index.html
+      args:
+        creates: /tmp/index.html
+
+...

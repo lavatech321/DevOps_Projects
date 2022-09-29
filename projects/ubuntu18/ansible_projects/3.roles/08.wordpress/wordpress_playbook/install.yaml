@@ -1,0 +1,11 @@
+---
+- hosts: localhost
+  tasks:
+    - name: Download wordpress binary
+      unarchive:
+        src: https://wordpress.org/latest.tar.gz
+        dest: /tmp
+        remote_src: yes
+
+    
+...

@@ -1,0 +1,34 @@
+# This playbook contains some examples related to copying file/folder
+---
+- hosts: worker1
+  gather_facts: yes
+  tasks:
+    - name: Copy file from ansible server to managed node
+      copy:
+        src: data/sshd_config
+        dest: /etc/ssh/sshd_config
+        owner: root
+        group: root
+        mode: '0600'
+        backup: yes
+
+    - name: Copy using inline content
+      copy:
+        content: '# This is sample content'
+        dest: /etc/mine.conf
+
+    - name: Copy folder from ansible server to managed node
+      copy:
+        src: data
+        dest: /tmp
+
+    - name: Copy file from worker1(src) to worker2(dest)
+      synchronize:
+        # /demo.txt should be present on worker1
+        src: /demo.txt
+        dest: /tmp
+        mode: pull
+      # Required: passwordless ssh between worker2 and worker1
+      delegate_to: worker2
+
+...

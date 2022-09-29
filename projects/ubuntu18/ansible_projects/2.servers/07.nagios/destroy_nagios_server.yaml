@@ -1,0 +1,45 @@
+---
+- name: "Destroy nagios server"
+  hosts: master
+  become: yes
+  become_method: sudo
+  become_user: root
+  gather_facts: no
+  tags:
+    - destroy_nagios_server
+    - destroy_nagios
+    - destroy
+  vars_files:
+    - vars.yaml
+
+  tasks:
+      - name: Nagios Package uninstallation
+        yum:
+          name: "{{ item }}"
+          state: absent
+        when: item not in ["firewalld", "python3-firewall"]
+        loop:  "{{ packages }}"
+
+      - name: Remove folder for nagios
+        file:
+            name: "{{ item }}"
+            state: absent
+        loop:
+            - /tmp/nagios
+            - /tmp/nagios-plugin
+
+      - name: Disable firewall services for nginx
+        firewalld:
+          service: "{{ item }}"
+          permanent: no
+          state: disabled
+          immediate: no
+        loop: "{{ ports }}"
+
+      - name: "Removing /tmp/infodir/nagios/output.txt"
+        file:
+          name: /tmp/infodir/nagios/output.txt
+          state: absent
+
+
+...

@@ -1,0 +1,26 @@
+# This playbook contains some examples related to yum module
+---
+- hosts: localhost
+  tasks:
+    - name: Install the latest version of Apache
+      yum:
+        name: httpd
+        state: latest
+
+    - name: Install the latest version of Git
+      yum:
+        name: git
+        state: present
+
+    - name: Install the 'Development tools' package group
+      yum:
+        name: '@Development tools'
+        state: present
+
+    - name: Uninstall httpd and remove it's dependency
+      yum:
+        name: httpd
+        state: absent
+        autoremove: yes
+
+...

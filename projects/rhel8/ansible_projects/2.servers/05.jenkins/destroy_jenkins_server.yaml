@@ -1,0 +1,40 @@
+---
+- hosts: localhost
+  become: yes
+  become_method: sudo
+  become_user: root
+  gather_facts: no
+  vars_files:
+    - vars.yaml
+
+  tasks:
+       - name: Remove jenkins repository
+         file:
+           dest: /etc/yum.repos.d/jenkins.repo
+           state: absent
+
+       - name: Unimport key
+         rpm_key:
+            state: absent
+            key: https://pkg.jenkins.io/redhat/jenkins.io.key
+
+       - name: Package Uninstallation
+         dnf:
+           name: "{{ item }}"
+           state: absent
+         when: item not in ["firewalld", "python3-firewall"]
+         loop:
+           - "{{ packages }}"
+
+       - name: Prevent traffic in default zone on port 8080/tcp
+         firewalld:
+           port: 8080/tcp
+           permanent: no
+           state: disabled
+           immediate: no
+
+       - name: "Remove /tmp/infodir/jenkins"
+         file:
+            name: /tmp/infodir/jenkins
+            state: absent
+

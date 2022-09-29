@@ -1,0 +1,96 @@
+---
+- block:
+    - name: installing packages
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ package_list }}"
+
+    - name: create a directory
+      file:
+        path: /smbshared
+        state: directory
+        owner: root
+        group: root
+        mode: '777'
+
+    - name: create a user
+      user:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ samba_users }}"
+
+    - name: Adding into samba user
+      shell: echo -ne "{{ item.value }}\n{{ item.value }}\n" | smbpasswd -a -s "{{ item.key }}"
+      loop: "{{ samba_cred | dict2items }}"
+
+    - name: Samba database
+      shell: "pdbedit -wL"
+      register: db
+
+    - name: Display samba database
+      debug:
+        msg: "{{ db.stdout }}"
+
+    - name: adding content in samba config file
+      blockinfile:
+        path: /etc/samba/smb.conf
+        block: |
+          [tester]
+                comment = smb dir for testing team
+                path = /smbshared
+                valid users = rohit, sudhanshu
+                write list = sudhanshu
+      notify:
+        - restart_me
+
+    - name: service restart
+      service:
+        name: "{{item}}"
+        state: restarted
+      loop: "{{services}}"
+
+    - name: Enable firewall services for samba
+      firewalld:
+        service: "{{ item }}"
+        permanent: yes
+        state: enabled
+        immediate: yes
+      loop: "{{ firewall_service }}"
+
+    - name: Put SELinux in permissive mode
+      selinux:
+        policy: targeted
+        state: permissive
+
+    - name: Test samba settings
+      shell: testparm
+      register: result
+
+    - name: Display samba settings result
+      debug:
+        msg: "{{ result.stdout_lines }}"
+
+  rescue:
+    - name: Uninstalling packages
+      yum:
+        name: "{{ item }}"
+        state: absent
+      loop: "{{ package_list }}"
+    
+
+    - name: Delete samba mount directory
+      file:
+        path: /smbshared
+        state: absent
+
+    - name: Remove the user
+      user:
+        name: "{{ item }}"
+        state: absent
+      loop: "{{ samba_users }}"
+
+    - name: Remove samba config file
+      file:
+        path: /etc/samba/smb.conf
+        state: absent

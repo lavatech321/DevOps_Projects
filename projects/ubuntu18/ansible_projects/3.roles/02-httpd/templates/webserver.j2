@@ -1,0 +1,17 @@
+
+{% for key, value in details.items() %}
+Listen {{ var[0] }}
+<Directory /var/www/html/{{ key }}>
+	Require all granted
+	AllowOverride None
+</Directory>
+
+<VirtualHost *:{{ value[0] }}>
+	DocumentRoot /var/www/html/{{ key }}
+	ServerName {{ value[1]  }}
+	ServerAdmin {{ value[2] }}
+	ErrorLog {{ value[3] }}
+	CustomLog {{ value[4] }} combined
+</VirtualHost>
+{% endfor %}
+

@@ -1,0 +1,43 @@
+---
+- block:
+    - name: installing packages
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ samba_client_package_list }}"
+
+    - name: create a directory to mount samba share
+      file:
+        path: /mount_samba
+        state: directory
+        owner: root
+        group: root
+        mode: '777'
+
+    - name: Mount network share
+      mount:
+        src: "//{{ hostvars['master']['server_ip'] }}/tester"
+        path: /mount_samba
+        fstype: cifs
+        opts: 'username=rohit,password=r@12345'
+        state: mounted
+
+  rescue:
+    - name: Uninstalling packages
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ samba_client_package_list }}"
+    
+    - name: Unmount samba share
+      mount:
+        path: /mount_samba
+        state: unmounted
+
+    - name: Remove samba mount directory
+      file:
+        path: /mount_samba
+        state: absent
+
+...
+

@@ -1,0 +1,45 @@
+# This playbook contains some examples related to user and group
+---
+- hosts: localhost
+  gather_facts: yes
+  tasks:
+    - name: Add group "admins"
+      group:
+        gid: 4500
+        name: admins
+        state: present
+
+    - name: Add group "developer"
+      group:
+        gid: 4600
+        name: developers
+        state: present
+
+    - name: Add group "tester"
+      group:
+        gid: 4700
+        name: testers
+        state: present
+
+    - name: Add the user 'james' with differnet attributes
+      user:
+        name: james
+        shell: /bin/bash
+        create_home: yes
+        home: /mnt/james
+        uid: 4400
+        comment: "system admin"
+        generate_ssh_key: yes        
+
+        # Set primary group 
+        group: admins
+
+        # Set secondary group 
+        groups: developers, testers
+        append: yes
+
+        # Encrypted password command: 
+        # $ openssl passwd -salt 'my_random' -1 'redhat' 
+        password: $1$my_rando$HlMH9zGIVgc9kf3GUK3E81
+
+...

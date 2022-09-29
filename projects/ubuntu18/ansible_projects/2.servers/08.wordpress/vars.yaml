@@ -1,0 +1,17 @@
+flag: false
+ansible_python_interpreter: /usr/bin/python3.6
+mysql_root_password: redhat
+ports: 
+    - http
+    - https
+    - mysql
+packages:
+    - php-mysqlnd 
+    - php-fpm 
+    - httpd
+    - php-json
+    - rsync
+    - firewalld
+    - python3-firewall
+
+

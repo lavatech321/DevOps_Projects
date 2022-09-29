@@ -1,0 +1,26 @@
+flag: false
+ansible_python_interpreter: /usr/bin/python3.6
+code_location:
+   - website_code/website1
+   - website_code/website2
+   - website_code/website3
+packages:
+   - nginx
+   - firewalld
+   - python3-firewall
+
+details:
+   website1:  [ "7700" , "www.abcfarms.com" ]
+   website2:  [ "7800" , "www.xyzclass.com" ]
+   website3:  [ "7900" , "www.mno.com" ]
+firewall_settings:
+   - 7700/tcp
+   - 7800/tcp
+   - 7900/tcp
+   - 8888/tcp
+ports:
+   - 7700
+   - 7800
+   - 7900
+   - 8888
+

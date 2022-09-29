@@ -1,0 +1,14 @@
+# This playbook contains some examples related to shell module
+---
+- hosts: localhost
+  tasks:
+    - name: Capture IPV4 address
+      shell: "hostname -I | cut -d ' ' -f 2"
+      register: ipv4
+
+    - name: "Display output of ipv4"
+      debug:
+        msg: "{{ ipv4.stdout }}"
+
+...
+
