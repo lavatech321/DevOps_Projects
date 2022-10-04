@@ -17,7 +17,7 @@
         yum:
           name: "{{ item }}"
           state: absent
-        when: item not in ["firewalld", "python3-firewall"]
+        when: item not in ["firewalld", "python3-firewall","glibc", "glibc-common" ]
         loop:  "{{ packages }}"
 
       - name: Remove folder for nagios

@@ -6,7 +6,6 @@
     - vars.yaml
 
   tasks:
-
         - name: "Remove mongodb folder"
           file:
             name: "{{ item }}"

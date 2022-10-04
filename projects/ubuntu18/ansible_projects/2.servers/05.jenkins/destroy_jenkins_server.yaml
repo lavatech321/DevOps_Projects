@@ -23,8 +23,7 @@
            name: "{{ item }}"
            state: absent
          when: item not in ["firewalld", "python3-firewall"]
-         loop:
-           - "{{ packages }}"
+         loop: "{{ packages }}"
 
        - name: Prevent traffic in default zone on port 8080/tcp
          firewalld:
