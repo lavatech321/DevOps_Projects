@@ -1,0 +1,45 @@
+---
+- name: "Destroy wordpress server"
+  hosts: master
+  become: yes
+  become_method: sudo
+  become_user: root
+  gather_facts: no
+  tags:
+    - destroy_wordpress_server
+    - destroy_wordpress
+    - destroy
+  vars_files:
+    - vars.yaml
+
+  tasks:
+      - name: Uninstall apache package
+        dnf:
+          name: "{{ item }}"
+          state: absent
+        loop: "{{ packages }}"
+
+      - name: Remove wordpress binary
+        file:
+          name: "{{ item }}"
+          state: absent
+        loop:
+          - /tmp/wordpress
+          - /var/www/html/wordpress
+
+      - name: Remove traffic in default zone for service http
+        firewalld:
+          service: "{{ item }}"
+          permanent: no
+          state: disabled
+          immediate: no
+        loop: "{{ ports }}"
+
+      - name: "Remove /tmp/infodir/wordpress"
+        file: 
+          name: /tmp/infodir/nagios/output.txt
+          state: absent
+
+
+...
+

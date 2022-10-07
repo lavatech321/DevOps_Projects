@@ -1,0 +1,73 @@
+---
+- name: "Install terraform server"
+  hosts: master
+  become: yes
+  become_method: sudo
+  become_user: root
+  gather_facts: no
+  tags:
+    - install_terraform_server
+    - install_terraform
+    - install
+
+  vars_files:
+    - vars.yaml
+  tasks:
+     - block:
+
+       - name: Install yum-utils
+         dnf:
+           name: yum-utils
+           state: present
+
+       - name: Add repository
+         shell: yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+
+       - name: Install terraform
+         dnf:
+           name: terraform
+           state: present
+
+       - name: Put SELinux in permissive mode
+         selinux:
+           policy: targeted
+           state: permissive
+
+       - set_fact:
+           flag: true
+       rescue:
+       - name: Package Uninstallation
+         dnf:
+           name: "{{ item }}"
+           state: absent
+         loop:
+           - "{{ packages }}"
+
+       - set_fact:
+           flag: false
+
+       always:
+       - name: Create terraform server details folder
+         local_action: file dest="/tmp/infodir/terraform" recurse=yes state=directory
+         run_once: true
+
+       - stat: path=/tmp/infodir/terraform/output.txt
+         register: file_state
+
+       - name: "Save terraform server version in /tmp/infodir/terraform/output.txt"
+         shell: echo "`terraform --version`" > /tmp/infodir/terraform/output.txt
+         when: file_state.stat.exists is defined and not file_state.stat.exists
+
+       - name: Sending an e-mail using Gmail SMTP servers
+         mail:
+           host: 'smtp.gmail.com'
+           port: '587'
+           username: 'kripakoth@gmail.com'
+           password: 'qsmdqpsntljxatan'
+           to: 'Yogita Soni <yogitasoni9312@gmail.com>'
+           subject: 'Terraform server status'
+           body: "{{ 'Terraform server deployed successfully' if flag == true else 'Terraform server not deployed' }}"
+         delegate_to: localhost
+         run_once: true
+         ignore_errors: yes
+
