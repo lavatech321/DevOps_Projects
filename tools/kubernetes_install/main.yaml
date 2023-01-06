@@ -1,4 +1,5 @@
 ---
+- import_playbook: kubernetes/install_docker.yaml
 - import_playbook: kubernetes/install_k8.yaml
 - import_playbook: kubernetes/k8_master.yaml
 - import_playbook: kubernetes/k8_worker.yaml 
