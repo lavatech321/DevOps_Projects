@@ -1,0 +1,14 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = "bento/ubuntu-18.04"
+  config.vm.network "private_network", ip: "172.18.0.11"
+   config.vm.provision "shell", inline: <<-SHELL
+     apt-get update
+     sudo hostnamectl set-hostname worker
+     sudo echo -e "redhat\nredhat" | sudo  passwd root
+     sudo echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config
+     sudo echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
+     sudo echo -e "\n172.18.0.10   master\n172.18.0.11   worker\n" >> /etc/hosts
+     sudo systemctl restart sshd
+     
+   SHELL
+end
