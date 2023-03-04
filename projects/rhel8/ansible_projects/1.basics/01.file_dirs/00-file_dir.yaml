@@ -35,7 +35,7 @@
         dest: /sshd.conf
         owner: root
         group: root
-        state: link
+        state: hard
 
     - name: Delete file/folder
       file:
