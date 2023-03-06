@@ -1,5 +1,14 @@
 
 ########## Sample example on creating ansible vault ###########
+
+#  ansible-vault create  abc.txt
+# it will ask password for create abc.txt in encrypted format
+
+
+# ansible-vault edit  abc.txt 
+# it will ask password for edit abc.txt 
+
+
 # ansible-playbook -e @vault2.yml --ask-vault-pass 00-main.yaml 
 ---
 - hosts: localhost
