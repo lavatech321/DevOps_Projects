@@ -23,9 +23,8 @@
     - name: Replace line having first word starting with "^Listen", with location
       lineinfile:
         path: /etc/httpd/conf/httpd.conf
-        regexp: '^Listen '
-        line: Listen 8080
         insertafter: '^#Listen '
+        line: Listen 8080
 
     - name: Replace a entry by searching an string
       lineinfile:
